@@ -9,6 +9,8 @@ import { join } from 'node:path'
 
 const SERVER_URL = 'http://127.0.0.1:3456'
 const TIMEOUT_MS = 120_000
+const WINDOW_READY = '[Electron] Window ready to show'
+const WINDOW_FAILED = '[Electron] Failed to load:'
 const distDir = join(import.meta.dirname, '..', 'dist-electron')
 
 function findExecutable() {
@@ -23,6 +25,15 @@ if (!existsSync(executable)) {
   console.error(`❌ Executable not found: ${executable}`)
   process.exit(1)
 }
+
+// Another server on the port (e.g. a running DM Hero) would make the checks
+// below test the wrong process
+try {
+  await fetch(SERVER_URL)
+  console.error(`❌ Port of ${SERVER_URL} is already in use - stop the other process first`)
+  process.exit(1)
+}
+catch { /* port free */ }
 
 // Fresh profile so the test never depends on (or touches) existing data
 const userDataDir = mkdtempSync(join(tmpdir(), 'dm-hero-smoke-'))
@@ -40,13 +51,14 @@ child.stdout.on('data', (d) => {
 child.stderr.on('data', (d) => {
   output += d
 })
-let exitCode = null
-child.on('exit', (code) => {
-  exitCode = code
+// Set on ANY exit - a crash by signal (e.g. SIGSEGV) has code null
+let exitReason = null
+child.on('exit', (code, signal) => {
+  exitReason = signal ? `signal ${signal}` : `code ${code}`
 })
 
 function stop() {
-  if (child.exitCode !== null) return
+  if (exitReason) return
   if (process.platform === 'win32') {
     try {
       execSync(`taskkill /pid ${child.pid} /T /F`, { stdio: 'ignore' })
@@ -69,7 +81,7 @@ function fail(message) {
 async function waitForServer() {
   const start = Date.now()
   while (Date.now() - start < TIMEOUT_MS) {
-    if (exitCode !== null) fail(`App exited early with code ${exitCode}`)
+    if (exitReason) fail(`App exited early with ${exitReason}`)
     let res
     try {
       res = await fetch(`${SERVER_URL}/api/campaigns`)
@@ -101,12 +113,25 @@ if (!Array.isArray(campaigns) || !campaigns.some(c => c.name === name)) {
 }
 console.log('✅ Database write + read OK')
 
-// The window must have loaded the app (no crash after server start)
-const page = await fetch(SERVER_URL)
-if (!page.ok) fail(`App page returned HTTP ${page.status}`)
+// The window itself must load the app (reported by electron/main.js)
+async function waitForWindow() {
+  const start = Date.now()
+  while (Date.now() - start < TIMEOUT_MS) {
+    if (exitReason) fail(`App exited before the window loaded with ${exitReason}`)
+    if (output.includes(WINDOW_FAILED)) fail('Window failed to load the app')
+    if (output.includes(WINDOW_READY)) return
+    await new Promise(r => setTimeout(r, 500))
+  }
+  fail(`Window not ready within ${TIMEOUT_MS / 1000}s`)
+}
+
+await waitForWindow()
+console.log('✅ Window loaded the app')
+
 await new Promise(r => setTimeout(r, 5000))
-if (exitCode !== null) fail(`App exited after startup with code ${exitCode}`)
-console.log('✅ App still running 5s after page load')
+if (exitReason) fail(`App exited after startup with ${exitReason}`)
+if (output.includes(WINDOW_FAILED)) fail('Window failed to load the app')
+console.log('✅ App still running 5s after window load')
 
 stop()
 console.log('✅ Electron smoke test passed')
