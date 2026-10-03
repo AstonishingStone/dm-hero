@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "DM Hero – Spieler",
+    "description": "Tritt dem Spiel deines Dungeon Masters bei."
+  },
+  "home": {
+    "greeting": "Hey, Abenteurer!",
+    "welcome": "Schön, dass du am Tisch sitzt.",
+    "instruction": "Scanne den QR-Code deines DMs oder gib unten den Spielcode ein – dein Abenteuer beginnt genau hier.",
+    "codeLabel": "Spielcode",
+    "join": "Würfel raus!",
+    "next": "Weiter",
+    "pinLabel": "Deine PIN",
+    "pinHint": "Spiel {code} – die 6-stellige PIN bekommst du von deinem DM.",
+    "changeCode": "Code ändern",
+    "joinFailed": "Code oder PIN stimmt nicht. Frag am besten deinen DM.",
+    "tooManyAttempts": "Zu viele Versuche. Warte kurz und probier es dann noch einmal.",
+    "noticeEnded": "Dein DM hat das Spiel beendet. Danke fürs Mitspielen!",
+    "noticeRemoved": "Du bist nicht mehr in diesem Spiel. Frag deinen DM nach Code und PIN."
+  },
+  "footer": {
+    "tagline": "Die Spieleransicht von DM Hero – dem kostenlosen Kampagnen-Manager für Dungeon Master.",
+    "imprint": "Impressum",
+    "privacy": "Datenschutz",
+    "terms": "Nutzungsbedingungen",
+    "language": "Sprache",
+    "legalNav": "Rechtliches",
+    "newTab": "öffnet in neuem Tab"
+  },
+  "play": {
+    "connecting": "Verbinde mit dem Tisch …",
+    "welcome": "Willkommen am Tisch, {name}!",
+    "waiting": "Lehn dich zurück – sobald dein DM etwas teilt, taucht es hier auf.",
+    "connected": "Verbunden",
+    "reconnecting": "Verbindung wird wiederhergestellt …",
+    "encrypted": "Ende-zu-Ende verschlüsselt",
+    "waitingApproval": "Warte auf die Bestätigung deines DMs …",
+    "compareSymbols": "Dein DM sieht dieselben Symbole – vergleicht sie kurz:",
+    "close": "Schließen",
+    "new": "Neu",
+    "back": "Zurück",
+    "search": "Geteilte Inhalte durchsuchen",
+    "noResults": "Nichts gefunden.",
+    "opened": "Geöffnet",
+    "revealName": "{previous} ist {name}!",
+    "revealNew": "Neu: {name}",
+    "revealInfo": "Neues über {name}: {fields}",
+    "revealShow": "Ansehen"
+  }
+}

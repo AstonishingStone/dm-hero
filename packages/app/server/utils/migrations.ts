@@ -2662,6 +2662,156 @@ export const migrations: Migration[] = [
       console.log('✅ Migration 54: Added sessions.music_links')
     },
   },
+  {
+    version: 55,
+    name: 'game_tables',
+    up: (db) => {
+      // Game table = the live game players join via the player app (one per campaign).
+      // Closing a game removes it for real (hard delete) - it is a round of play,
+      // not campaign content, and "close" must clean up everything.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS game_tables (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          campaign_id INTEGER NOT NULL UNIQUE,
+          code TEXT NOT NULL UNIQUE,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+        )
+      `)
+
+      // Players at the table: free name + 6-digit PIN, optionally linked to a
+      // Player entity (many DMs don't maintain those)
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS game_table_players (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          game_table_id INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          pin TEXT NOT NULL,
+          player_entity_id INTEGER,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (game_table_id) REFERENCES game_tables(id) ON DELETE CASCADE,
+          FOREIGN KEY (player_entity_id) REFERENCES entities(id) ON DELETE SET NULL,
+          UNIQUE (game_table_id, pin)
+        )
+      `)
+      db.exec('CREATE INDEX IF NOT EXISTS idx_game_table_players_table ON game_table_players(game_table_id)')
+
+      console.log('✅ Migration 55: Created game_tables + game_table_players')
+    },
+  },
+  {
+    version: 56,
+    name: 'game_tables_relay',
+    up: (db) => {
+      // Games are now registered on the player relay (packages/staging), which also
+      // hands out the globally unique code. Local-only games from before can't be
+      // joined, so they are removed (feature was unreleased).
+      db.exec('DELETE FROM game_tables')
+      db.exec('ALTER TABLE game_tables ADD COLUMN relay_game_id TEXT')
+      db.exec('ALTER TABLE game_tables ADD COLUMN relay_dm_token TEXT')
+
+      console.log('✅ Migration 56: Added relay columns to game_tables')
+    },
+  },
+  {
+    version: 57,
+    name: 'game_tables_e2e_keys',
+    up: (db) => {
+      // End-to-end keys of a game (JSON, see @dm-hero/seal StoredGameKeys).
+      // Private keys stay on this machine. Games without keys can't do E2E,
+      // so they are removed (feature unreleased).
+      db.exec('DELETE FROM game_tables')
+      db.exec('ALTER TABLE game_tables ADD COLUMN e2e_keys TEXT')
+
+      console.log('✅ Migration 57: Added e2e_keys to game_tables')
+    },
+  },
+  {
+    version: 58,
+    name: 'game_table_devices',
+    up: (db) => {
+      // Player devices the DM approved (by public key). Approved devices get the
+      // game key automatically - reloads and returning players need no new approval.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS game_table_devices (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          game_table_id INTEGER NOT NULL,
+          player_id INTEGER NOT NULL,
+          public_key TEXT NOT NULL,
+          approved_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (game_table_id) REFERENCES game_tables(id) ON DELETE CASCADE,
+          FOREIGN KEY (player_id) REFERENCES game_table_players(id) ON DELETE CASCADE,
+          UNIQUE (game_table_id, public_key)
+        )
+      `)
+
+      console.log('✅ Migration 58: Created game_table_devices')
+    },
+  },
+  {
+    version: 59,
+    name: 'game_table_shares',
+    up: (db) => {
+      // What the DM shares with the players. Live: a sync re-sends a share whenever
+      // its content changed (content_hash = what the players currently have).
+      // share_key is random so the relay learns nothing about entity types or ids.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS game_table_shares (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          game_table_id INTEGER NOT NULL,
+          share_key TEXT NOT NULL UNIQUE,
+          entity_type TEXT NOT NULL,
+          entity_id INTEGER NOT NULL,
+          fields TEXT NOT NULL DEFAULT '[]',
+          content_hash TEXT,
+          created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (game_table_id) REFERENCES game_tables(id) ON DELETE CASCADE,
+          UNIQUE (game_table_id, entity_type, entity_id)
+        )
+      `)
+
+      console.log('✅ Migration 59: Created game_table_shares')
+    },
+  },
+  {
+    version: 60,
+    name: 'game_table_shares_display_name',
+    up: (db) => {
+      // Alias players see instead of the real name ("The mysterious man") - NULL = real name.
+      // Changing it to the real name later is the reveal.
+      db.exec('ALTER TABLE game_table_shares ADD COLUMN display_name TEXT')
+
+      console.log('✅ Migration 60: Added display_name to game_table_shares')
+    },
+  },
+  {
+    version: 61,
+    name: 'game_table_share_files',
+    up: (db) => {
+      // Encrypted files uploaded for a share (image thumb + full). source = local
+      // image path: a new image means a new source -> new upload, old files removed.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS game_table_share_files (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          share_id INTEGER NOT NULL,
+          source TEXT NOT NULL,
+          variant TEXT NOT NULL,
+          file_id TEXT NOT NULL,
+          file_key TEXT NOT NULL,
+          iv TEXT NOT NULL,
+          mime TEXT NOT NULL,
+          size INTEGER NOT NULL,
+          FOREIGN KEY (share_id) REFERENCES game_table_shares(id) ON DELETE CASCADE,
+          UNIQUE (share_id, source, variant)
+        )
+      `)
+
+      console.log('✅ Migration 61: Created game_table_share_files')
+    },
+  },
 ]
 
 export async function runMigrations(db: Database.Database) {

@@ -38,7 +38,8 @@
     "themePickerTitle": "选择一个主题",
     "activeCampaign": "当前战役",
     "chooseCampaign": "选择战役",
-    "chooseCampaignHint": "激活战役后即可使用其他功能"
+    "chooseCampaignHint": "激活战役后即可使用其他功能",
+    "gameTable": "游戏桌"
   },
   "themes": {
     "dark": "黑暗（午夜酒馆）",
@@ -554,7 +555,8 @@
     },
     "noMemberships": "无派系成员资格",
     "noMembershipsText": "该NPC尚未属于任何派系。",
-    "noLore": "暂无关联的传说"
+    "noLore": "暂无关联的传说",
+    "image": "图片"
   },
   "factions": {
     "title": "阵营",
@@ -774,7 +776,8 @@
     "selectItem": "选择项目",
     "selectItemPlaceholder": "选择一个项目",
     "linkItem": "链接项目",
-    "incomingItemTooltip": "由项目创建的关系"
+    "incomingItemTooltip": "由项目创建的关系",
+    "image": "图片"
   },
   "lore": {
     "title": "背景知识",
@@ -886,7 +889,8 @@
       "players": "关联玩家",
       "documents": "文件和笔记",
       "images": "图片库"
-    }
+    },
+    "image": "图片"
   },
   "locations": {
     "title": "地点",
@@ -1054,7 +1058,9 @@
       "images": "图片库",
       "lore": "相关知识"
     },
-    "incomingLoreTooltip": "由传说条目创建的关系"
+    "incomingLoreTooltip": "由传说条目创建的关系",
+    "image": "图片",
+    "parent": "位于"
   },
   "items": {
     "title": "物品",
@@ -1258,7 +1264,8 @@
       "players": "关联玩家",
       "documents": "文件和笔记",
       "images": "图片库"
-    }
+    },
+    "image": "图片"
   },
   "referenceData": {
     "title": "参考数据",
@@ -2722,6 +2729,74 @@
     "blank": {
       "name": "空白模板",
       "description": "空模板 - 自己定义一切"
+    }
+  },
+  "gameTable": {
+    "title": "游戏桌",
+    "intro": "把你的队伍请上桌：开始一局游戏，给每位玩家一个 PIN，并分享游戏代码或二维码。玩家用手机或电脑即可加入，无需账号。",
+    "startHint": "这个战役还没有进行中的游戏。",
+    "start": "开始游戏",
+    "code": "游戏代码",
+    "copyCode": "复制游戏代码",
+    "link": "给玩家的链接",
+    "copyLink": "复制链接",
+    "qrAlt": "包含游戏链接的二维码",
+    "copied": "已复制",
+    "close": "结束游戏",
+    "closeTitle": "结束游戏？",
+    "closeWarning": "游戏将被彻底删除，包括所有玩家和 PIN。新游戏会使用新的代码。",
+    "closeConfirm": "确认结束",
+    "players": "玩家",
+    "addPlayer": "添加玩家",
+    "editPlayer": "编辑玩家",
+    "removePlayer": "移除",
+    "playerActions": "玩家操作",
+    "noPlayers": "桌边还没有人。添加你的玩家——每人都会得到自己的 PIN。",
+    "name": "玩家名称",
+    "linkEntity": "关联战役中的玩家（可选）",
+    "linkEntityHint": "使用该玩家的图片和名称",
+    "pin": "PIN",
+    "copyPin": "复制 PIN",
+    "rollPin": "重新生成 PIN",
+    "pinRolled": "已生成新 PIN",
+    "online": "在线",
+    "offline": "离线",
+    "sharing": "已分享",
+    "error": "操作失败，请重试。",
+    "relayUnreachable": "暂时无法连接玩家服务器。请检查网络连接后重试。",
+    "relayConnected": "玩家服务器已连接",
+    "relayOffline": "无法连接玩家服务器",
+    "restart": "开始新游戏",
+    "restartTitle": "开始新游戏？",
+    "restartWarning": "当前游戏将被结束并删除——所有玩家都会退出。新游戏会使用新的代码，你需要重新添加玩家。",
+    "restartConfirm": "重新开始",
+    "onlineCount": "{count} 人在线",
+    "noPlayersShort": "还没有玩家。",
+    "openTable": "打开游戏桌",
+    "pendingTitle": "请求加入",
+    "pendingHint": "新设备！请把这些符号与玩家屏幕上的符号对比——一致就同意。",
+    "pendingCount": "{count} 人请求加入",
+    "wantsToJoin": "{name} 请求加入",
+    "approve": "同意",
+    "reject": "拒绝",
+    "share": {
+      "action": "与玩家分享",
+      "shared": "已与玩家分享——编辑",
+      "title": "分享“{name}”",
+      "chooseFields": "玩家应该看到什么？",
+      "liveHint": "实时：勾选字段的修改会立即显示给玩家。你的笔记始终保密。",
+      "confirm": "确定吗？玩家会立即看到。",
+      "confirmYes": "确定分享",
+      "back": "返回",
+      "stop": "停止分享",
+      "done": "已分享",
+      "stopped": "已停止分享",
+      "empty": "还没有分享任何内容。用分享按钮分享 NPC、地点、物品、知识和阵营。",
+      "fieldCount": "{count} 个字段",
+      "displayName": "给玩家看的名字（可选）",
+      "displayNameHint": "例如“神秘男子”。留空 = 真实名字（{name}）。之后清空 = 揭晓。",
+      "storageFull": "本局游戏的存储空间已满。请少分享一些图片，或停止分享部分内容。",
+      "rememberDefaults": "将此选择记为{type}的默认设置"
     }
   }
 }

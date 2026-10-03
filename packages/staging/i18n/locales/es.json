@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "DM Hero – Jugadores",
+    "description": "Únete a la partida de tu Dungeon Master."
+  },
+  "home": {
+    "greeting": "¡Hola, aventurero!",
+    "welcome": "¡Qué bien que hayas llegado!",
+    "instruction": "Escanea el código QR de tu DM o escribe abajo su código de partida: tu aventura empieza aquí.",
+    "codeLabel": "Código de partida",
+    "join": "¡A jugar!",
+    "next": "Siguiente",
+    "pinLabel": "Tu PIN",
+    "pinHint": "Partida {code}: tu DM te da el PIN de 6 cifras.",
+    "changeCode": "Cambiar código",
+    "joinFailed": "El código o el PIN no es correcto. Pregúntale a tu DM.",
+    "tooManyAttempts": "Demasiados intentos. Espera un momento y vuelve a probar.",
+    "noticeEnded": "Tu DM ha terminado la partida. ¡Gracias por jugar!",
+    "noticeRemoved": "Ya no estás en esta partida. Pide a tu DM el código y el PIN."
+  },
+  "footer": {
+    "tagline": "La vista de jugadores de DM Hero – el gestor de campañas gratuito para Dungeon Masters.",
+    "imprint": "Aviso legal",
+    "privacy": "Privacidad",
+    "terms": "Condiciones de uso",
+    "language": "Idioma",
+    "legalNav": "Información legal",
+    "newTab": "se abre en una pestaña nueva"
+  },
+  "play": {
+    "connecting": "Conectando con la mesa…",
+    "welcome": "¡Bienvenido a la mesa, {name}!",
+    "waiting": "Ponte cómodo: en cuanto tu DM comparta algo, aparecerá aquí.",
+    "connected": "Conectado",
+    "reconnecting": "Reconectando…",
+    "encrypted": "Cifrado de extremo a extremo",
+    "waitingApproval": "Esperando a que tu DM te deje entrar…",
+    "compareSymbols": "Tu DM ve los mismos símbolos: compáralos un momento:",
+    "close": "Cerrar",
+    "new": "Nuevo",
+    "back": "Atrás",
+    "search": "Buscar en lo compartido",
+    "noResults": "No se encontró nada.",
+    "opened": "Abiertos",
+    "revealName": "¡{previous} es {name}!",
+    "revealNew": "Nuevo: {name}",
+    "revealInfo": "Novedades sobre {name}: {fields}",
+    "revealShow": "Ver"
+  }
+}

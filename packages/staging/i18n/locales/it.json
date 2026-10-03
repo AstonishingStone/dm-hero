@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "DM Hero – Giocatori",
+    "description": "Unisciti alla partita del tuo Dungeon Master."
+  },
+  "home": {
+    "greeting": "Ciao, avventuriero!",
+    "welcome": "Che bello averti al tavolo.",
+    "instruction": "Scansiona il QR code del tuo DM o inserisci qui sotto il codice partita: l'avventura comincia adesso.",
+    "codeLabel": "Codice partita",
+    "join": "Si gioca!",
+    "next": "Avanti",
+    "pinLabel": "Il tuo PIN",
+    "pinHint": "Partita {code}: il PIN di 6 cifre te lo dà il tuo DM.",
+    "changeCode": "Cambia codice",
+    "joinFailed": "Codice o PIN errato. Chiedi al tuo DM.",
+    "tooManyAttempts": "Troppi tentativi. Aspetta un attimo e riprova.",
+    "noticeEnded": "Il tuo DM ha terminato la partita. Grazie per aver giocato!",
+    "noticeRemoved": "Non sei più in questa partita. Chiedi codice e PIN al tuo DM."
+  },
+  "footer": {
+    "tagline": "La vista giocatori di DM Hero – il gestore di campagne gratuito per Dungeon Master.",
+    "imprint": "Note legali",
+    "privacy": "Privacy",
+    "terms": "Condizioni d'uso",
+    "language": "Lingua",
+    "legalNav": "Note legali",
+    "newTab": "si apre in una nuova scheda"
+  },
+  "play": {
+    "connecting": "Connessione al tavolo…",
+    "welcome": "Benvenuto al tavolo, {name}!",
+    "waiting": "Mettiti comodo: appena il tuo DM condivide qualcosa, comparirà qui.",
+    "connected": "Connesso",
+    "reconnecting": "Riconnessione…",
+    "encrypted": "Crittografia end-to-end",
+    "waitingApproval": "In attesa che il tuo DM ti faccia entrare…",
+    "compareSymbols": "Il tuo DM vede gli stessi simboli: confrontateli un attimo:",
+    "close": "Chiudi",
+    "new": "Nuovo",
+    "back": "Indietro",
+    "search": "Cerca nei contenuti condivisi",
+    "noResults": "Nessun risultato.",
+    "opened": "Aperti",
+    "revealName": "{previous} è {name}!",
+    "revealNew": "Nuovo: {name}",
+    "revealInfo": "Novità su {name}: {fields}",
+    "revealShow": "Mostra"
+  }
+}

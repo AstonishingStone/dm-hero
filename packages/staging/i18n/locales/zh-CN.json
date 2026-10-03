@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "DM Hero – 玩家",
+    "description": "加入你的地下城主的游戏。"
+  },
+  "home": {
+    "greeting": "嘿，冒险者！",
+    "welcome": "很高兴你来了。",
+    "instruction": "扫描 DM 给你的二维码，或在下方输入游戏代码——冒险就此开始。",
+    "codeLabel": "游戏代码",
+    "join": "开始冒险",
+    "next": "下一步",
+    "pinLabel": "你的 PIN",
+    "pinHint": "游戏 {code}——6 位 PIN 由你的 DM 提供。",
+    "changeCode": "更改代码",
+    "joinFailed": "代码或 PIN 不正确。最好问问你的 DM。",
+    "tooManyAttempts": "尝试次数过多，请稍后再试。",
+    "noticeEnded": "你的 DM 已结束游戏。感谢参与！",
+    "noticeRemoved": "你已不在这局游戏中。请向你的 DM 索取代码和 PIN。"
+  },
+  "footer": {
+    "tagline": "DM Hero 的玩家视图——为地下城主打造的免费战役管理工具。",
+    "imprint": "法律声明",
+    "privacy": "隐私",
+    "terms": "使用条款",
+    "language": "语言",
+    "legalNav": "法律信息",
+    "newTab": "在新标签页中打开"
+  },
+  "play": {
+    "connecting": "正在连接游戏桌……",
+    "welcome": "欢迎上桌，{name}！",
+    "waiting": "放松一下——DM 一分享内容，就会显示在这里。",
+    "connected": "已连接",
+    "reconnecting": "正在重新连接……",
+    "encrypted": "端到端加密",
+    "waitingApproval": "正在等待你的 DM 确认……",
+    "compareSymbols": "你的 DM 会看到相同的符号——快速核对一下：",
+    "close": "关闭",
+    "new": "新",
+    "back": "返回",
+    "search": "搜索分享内容",
+    "noResults": "没有找到。",
+    "opened": "已打开",
+    "revealName": "{previous} 就是 {name}！",
+    "revealNew": "新内容：{name}",
+    "revealInfo": "关于 {name} 的新信息：{fields}",
+    "revealShow": "查看"
+  }
+}

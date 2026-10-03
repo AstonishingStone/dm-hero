@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "DM Hero – Joueurs",
+    "description": "Rejoins la partie de ton Maître du Jeu."
+  },
+  "home": {
+    "greeting": "Salut l'aventurier !",
+    "welcome": "Content de te voir parmi nous.",
+    "instruction": "Scanne le QR code de ton MJ ou saisis son code de partie ci-dessous : l'aventure commence ici.",
+    "codeLabel": "Code de partie",
+    "join": "À l'aventure !",
+    "next": "Suivant",
+    "pinLabel": "Ton PIN",
+    "pinHint": "Partie {code} : ton MJ te donne le PIN à 6 chiffres.",
+    "changeCode": "Changer de code",
+    "joinFailed": "Le code ou le PIN est incorrect. Demande à ton MJ.",
+    "tooManyAttempts": "Trop de tentatives. Attends un instant et réessaie.",
+    "noticeEnded": "Ton MJ a terminé la partie. Merci d'avoir joué !",
+    "noticeRemoved": "Tu n'es plus dans cette partie. Demande le code et le PIN à ton MJ."
+  },
+  "footer": {
+    "tagline": "La vue joueurs de DM Hero – le gestionnaire de campagnes gratuit pour Maîtres du Jeu.",
+    "imprint": "Mentions légales",
+    "privacy": "Confidentialité",
+    "terms": "Conditions d'utilisation",
+    "language": "Langue",
+    "legalNav": "Mentions légales",
+    "newTab": "s'ouvre dans un nouvel onglet"
+  },
+  "play": {
+    "connecting": "Connexion à la table…",
+    "welcome": "Bienvenue à la table, {name} !",
+    "waiting": "Installe-toi : dès que ton MJ partage quelque chose, ça apparaît ici.",
+    "connected": "Connecté",
+    "reconnecting": "Reconnexion…",
+    "encrypted": "Chiffré de bout en bout",
+    "waitingApproval": "En attente de la validation de ton MJ…",
+    "compareSymbols": "Ton MJ voit les mêmes symboles – comparez-les rapidement :",
+    "close": "Fermer",
+    "new": "Nouveau",
+    "back": "Retour",
+    "search": "Rechercher dans les partages",
+    "noResults": "Rien trouvé.",
+    "opened": "Ouverts",
+    "revealName": "{previous} est {name} !",
+    "revealNew": "Nouveau : {name}",
+    "revealInfo": "Du nouveau sur {name} : {fields}",
+    "revealShow": "Voir"
+  }
+}

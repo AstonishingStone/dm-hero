@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "title": "DM Hero – Players",
+    "description": "Join your Dungeon Master's game."
+  },
+  "home": {
+    "greeting": "Hey, adventurer!",
+    "welcome": "Glad you made it.",
+    "instruction": "Scan your DM's QR code or enter their game code below – your adventure starts right here.",
+    "codeLabel": "Game code",
+    "join": "Let's roll",
+    "next": "Next",
+    "pinLabel": "Your PIN",
+    "pinHint": "Game {code} – your DM gives you the 6-digit PIN.",
+    "changeCode": "Change code",
+    "joinFailed": "Code or PIN is wrong. Best ask your DM.",
+    "tooManyAttempts": "Too many attempts. Wait a moment and try again.",
+    "noticeEnded": "Your DM ended the game. Thanks for playing!",
+    "noticeRemoved": "You're no longer in this game. Ask your DM for the code and PIN."
+  },
+  "footer": {
+    "tagline": "The player view of DM Hero – the free campaign manager for Dungeon Masters.",
+    "imprint": "Imprint",
+    "privacy": "Privacy",
+    "terms": "Terms of use",
+    "language": "Language",
+    "legalNav": "Legal",
+    "newTab": "opens in a new tab"
+  },
+  "play": {
+    "connecting": "Connecting to the table …",
+    "welcome": "Welcome to the table, {name}!",
+    "waiting": "Sit back – as soon as your DM shares something, it shows up here.",
+    "connected": "Connected",
+    "reconnecting": "Reconnecting …",
+    "encrypted": "End-to-end encrypted",
+    "waitingApproval": "Waiting for your DM to let you in …",
+    "compareSymbols": "Your DM sees the same symbols – compare them quickly:",
+    "close": "Close",
+    "new": "New",
+    "back": "Back",
+    "search": "Search shared content",
+    "noResults": "Nothing found.",
+    "opened": "Opened",
+    "revealName": "{previous} is {name}!",
+    "revealNew": "New: {name}",
+    "revealInfo": "New about {name}: {fields}",
+    "revealShow": "Show"
+  }
+}

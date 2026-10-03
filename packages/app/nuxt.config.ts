@@ -3,6 +3,15 @@ import pkg from './package.json'
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   modules: ['@nuxt/eslint', '@nuxt/test-utils', '@nuxtjs/i18n', '@pinia/nuxt', 'nuxt-spyglass'],
+
+  // Local development talks to the local player app (pnpm dev:staging)
+  $development: {
+    runtimeConfig: {
+      public: {
+        stagingUrl: 'http://localhost:3002',
+      },
+    },
+  },
   devtools: { enabled: true },
 
   app: {
@@ -26,6 +35,8 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       appVersion: pkg.version,
+      // Player app (packages/staging) players join on. Override with NUXT_PUBLIC_STAGING_URL
+      stagingUrl: 'https://table.dm-hero.com',
     },
   },
 

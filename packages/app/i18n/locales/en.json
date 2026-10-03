@@ -38,7 +38,8 @@
     "themePickerTitle": "Pick a theme",
     "activeCampaign": "Active Campaign",
     "chooseCampaign": "Choose a campaign",
-    "chooseCampaignHint": "Everything else unlocks once a campaign is active"
+    "chooseCampaignHint": "Everything else unlocks once a campaign is active",
+    "gameTable": "Game table"
   },
   "themes": {
     "dark": "Dark (Midnight Tavern)",
@@ -554,7 +555,8 @@
     },
     "noMemberships": "No Faction Memberships",
     "noMembershipsText": "This NPC is not a member of any faction yet.",
-    "noLore": "No linked lore yet"
+    "noLore": "No linked lore yet",
+    "image": "Image"
   },
   "factions": {
     "title": "Factions",
@@ -774,7 +776,8 @@
     "selectItem": "Select Item",
     "selectItemPlaceholder": "Choose an item",
     "linkItem": "Link Item",
-    "incomingItemTooltip": "Relation created by the item"
+    "incomingItemTooltip": "Relation created by the item",
+    "image": "Image"
   },
   "lore": {
     "title": "Lore",
@@ -886,7 +889,8 @@
       "players": "Linked Players",
       "documents": "Documents & Notes",
       "images": "Image Gallery"
-    }
+    },
+    "image": "Image"
   },
   "locations": {
     "title": "Locations",
@@ -1054,7 +1058,9 @@
       "images": "Image Gallery",
       "lore": "Linked Lore"
     },
-    "incomingLoreTooltip": "Relation created by the lore entry"
+    "incomingLoreTooltip": "Relation created by the lore entry",
+    "image": "Image",
+    "parent": "Lies in"
   },
   "items": {
     "title": "Items",
@@ -1258,7 +1264,8 @@
       "players": "Linked Players",
       "documents": "Documents & Notes",
       "images": "Image Gallery"
-    }
+    },
+    "image": "Image"
   },
   "referenceData": {
     "title": "Reference Data",
@@ -2722,6 +2729,74 @@
     "blank": {
       "name": "Blank Template",
       "description": "Empty template - define everything yourself"
+    }
+  },
+  "gameTable": {
+    "title": "Game table",
+    "intro": "Bring your group to the table: start a game, give every player their PIN and share the code or QR code. Your players join from their phone or laptop – no account needed.",
+    "startHint": "No game is running for this campaign yet.",
+    "start": "Start game",
+    "code": "Game code",
+    "copyCode": "Copy game code",
+    "link": "Link for your players",
+    "copyLink": "Copy link",
+    "qrAlt": "QR code with the link to the game",
+    "copied": "Copied",
+    "close": "End game",
+    "closeTitle": "End the game?",
+    "closeWarning": "The game is deleted completely – including all players and PINs. A new game gets a new code.",
+    "closeConfirm": "End for good",
+    "players": "Players",
+    "addPlayer": "Add player",
+    "editPlayer": "Edit player",
+    "removePlayer": "Remove",
+    "playerActions": "Player actions",
+    "noPlayers": "Nobody at the table yet. Add your players – everyone gets their own PIN.",
+    "name": "Player name",
+    "linkEntity": "Link to a player from the campaign (optional)",
+    "linkEntityHint": "Uses the picture and name of your player",
+    "pin": "PIN",
+    "copyPin": "Copy PIN",
+    "rollPin": "Roll a new PIN",
+    "pinRolled": "New PIN rolled",
+    "online": "Online",
+    "offline": "Offline",
+    "sharing": "Shared",
+    "error": "That didn't work. Please try again.",
+    "relayUnreachable": "The player server can't be reached right now. Check your internet connection and try again.",
+    "relayConnected": "Player server connected",
+    "relayOffline": "Player server unreachable",
+    "restart": "Start new game",
+    "restartTitle": "Start a new game?",
+    "restartWarning": "The current game is ended and deleted – all players are removed. The new game gets a new code, you add the players again.",
+    "restartConfirm": "Start new",
+    "onlineCount": "{count} online",
+    "noPlayersShort": "No players yet.",
+    "openTable": "Open game table",
+    "pendingTitle": "Wants to join",
+    "pendingHint": "New device! Compare the symbols with the ones on the player's screen – if they match, approve.",
+    "pendingCount": "{count} wants to join",
+    "wantsToJoin": "{name} wants to join",
+    "approve": "Approve",
+    "reject": "Reject",
+    "share": {
+      "action": "Share with players",
+      "shared": "Shared with players – edit",
+      "title": "Share “{name}”",
+      "chooseFields": "What should your players see?",
+      "liveHint": "Live: your players see changes to the ticked fields right away. Your notes always stay private.",
+      "confirm": "Sure? Your players see it right away.",
+      "confirmYes": "Yes, share",
+      "back": "Back",
+      "stop": "Stop sharing",
+      "done": "Shared",
+      "stopped": "No longer shared",
+      "empty": "Nothing shared yet. Share NPCs, locations, items, lore and factions with the share button.",
+      "fieldCount": "{count} field | {count} fields",
+      "displayName": "Name for the players (optional)",
+      "displayNameHint": "E.g. “The mysterious man”. Empty = real name ({name}). Clear it later = the reveal.",
+      "storageFull": "This game's storage is full. Share fewer images or stop sharing some items.",
+      "rememberDefaults": "Remember this selection as default for {type}"
     }
   }
 }

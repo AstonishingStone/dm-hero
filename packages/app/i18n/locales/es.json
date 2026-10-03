@@ -38,7 +38,8 @@
     "themePickerTitle": "Elige un tema",
     "activeCampaign": "Campaña activa",
     "chooseCampaign": "Elegir una campaña",
-    "chooseCampaignHint": "Lo demás se desbloquea cuando hay una campaña activa"
+    "chooseCampaignHint": "Lo demás se desbloquea cuando hay una campaña activa",
+    "gameTable": "Mesa de juego"
   },
   "themes": {
     "dark": "Oscuro (Taberna de medianoche)",
@@ -554,7 +555,8 @@
     },
     "noMemberships": "Sin pertenencia a facciones",
     "noMembershipsText": "Este PNJ aún no es miembro de ninguna facción.",
-    "noLore": "Aún no hay lore vinculado"
+    "noLore": "Aún no hay lore vinculado",
+    "image": "Imagen"
   },
   "factions": {
     "title": "Facciones",
@@ -774,7 +776,8 @@
     "selectItem": "Seleccionar objeto",
     "selectItemPlaceholder": "Elige un objeto",
     "linkItem": "Vincular objeto",
-    "incomingItemTooltip": "Relación creada por el objeto"
+    "incomingItemTooltip": "Relación creada por el objeto",
+    "image": "Imagen"
   },
   "lore": {
     "title": "Lore",
@@ -886,7 +889,8 @@
       "players": "Jugadores vinculados",
       "documents": "Documentos y notas",
       "images": "Galería de imágenes"
-    }
+    },
+    "image": "Imagen"
   },
   "locations": {
     "title": "Lugares",
@@ -1054,7 +1058,9 @@
       "images": "Galería de imágenes",
       "lore": "Lore vinculado"
     },
-    "incomingLoreTooltip": "Relación creada por la entrada de lore"
+    "incomingLoreTooltip": "Relación creada por la entrada de lore",
+    "image": "Imagen",
+    "parent": "Se encuentra en"
   },
   "items": {
     "title": "Objetos",
@@ -1258,7 +1264,8 @@
       "players": "Jugadores vinculados",
       "documents": "Documentos y notas",
       "images": "Galería de imágenes"
-    }
+    },
+    "image": "Imagen"
   },
   "referenceData": {
     "title": "Datos de referencia",
@@ -2722,6 +2729,74 @@
     "blank": {
       "name": "Plantilla en blanco",
       "description": "Plantilla vacía: define todo tú mismo"
+    }
+  },
+  "gameTable": {
+    "title": "Mesa de juego",
+    "intro": "Reúne a tu grupo en la mesa: inicia una partida, dale a cada jugador su PIN y comparte el código o el código QR. Tus jugadores se unen desde el móvil o el portátil, sin cuenta.",
+    "startHint": "Todavía no hay ninguna partida en esta campaña.",
+    "start": "Iniciar partida",
+    "code": "Código de partida",
+    "copyCode": "Copiar código de partida",
+    "link": "Enlace para tus jugadores",
+    "copyLink": "Copiar enlace",
+    "qrAlt": "Código QR con el enlace a la partida",
+    "copied": "Copiado",
+    "close": "Terminar partida",
+    "closeTitle": "¿Terminar la partida?",
+    "closeWarning": "La partida se borra por completo, con todos los jugadores y PIN. Una partida nueva tendrá un código nuevo.",
+    "closeConfirm": "Terminar definitivamente",
+    "players": "Jugadores",
+    "addPlayer": "Añadir jugador",
+    "editPlayer": "Editar jugador",
+    "removePlayer": "Quitar",
+    "playerActions": "Acciones del jugador",
+    "noPlayers": "Aún no hay nadie en la mesa. Añade a tus jugadores: cada uno recibe su propio PIN.",
+    "name": "Nombre del jugador",
+    "linkEntity": "Vincular con un jugador de la campaña (opcional)",
+    "linkEntityHint": "Usa la imagen y el nombre de tu jugador",
+    "pin": "PIN",
+    "copyPin": "Copiar PIN",
+    "rollPin": "Tirar un PIN nuevo",
+    "pinRolled": "Nuevo PIN generado",
+    "online": "En línea",
+    "offline": "Desconectado",
+    "sharing": "Compartido",
+    "error": "Algo salió mal. Inténtalo de nuevo.",
+    "relayUnreachable": "El servidor de jugadores no está disponible ahora mismo. Comprueba tu conexión a internet e inténtalo de nuevo.",
+    "relayConnected": "Servidor de jugadores conectado",
+    "relayOffline": "Servidor de jugadores no disponible",
+    "restart": "Nueva partida",
+    "restartTitle": "¿Empezar una partida nueva?",
+    "restartWarning": "La partida actual se termina y se borra: todos los jugadores salen. La nueva partida tendrá un código nuevo y tendrás que añadir a los jugadores de nuevo.",
+    "restartConfirm": "Empezar de nuevo",
+    "onlineCount": "{count} en línea",
+    "noPlayersShort": "Todavía no hay jugadores.",
+    "openTable": "Ir a la mesa de juego",
+    "pendingTitle": "Quiere unirse",
+    "pendingHint": "¡Dispositivo nuevo! Compara los símbolos con los de la pantalla del jugador: si coinciden, acepta.",
+    "pendingCount": "{count} quiere unirse",
+    "wantsToJoin": "{name} quiere unirse",
+    "approve": "Aceptar",
+    "reject": "Rechazar",
+    "share": {
+      "action": "Compartir con jugadores",
+      "shared": "Compartido con jugadores: editar",
+      "title": "Compartir «{name}»",
+      "chooseFields": "¿Qué deben ver tus jugadores?",
+      "liveHint": "En directo: tus jugadores ven al instante los cambios en los campos marcados. Tus notas siempre son privadas.",
+      "confirm": "¿Seguro? Tus jugadores lo verán al instante.",
+      "confirmYes": "Sí, compartir",
+      "back": "Atrás",
+      "stop": "Dejar de compartir",
+      "done": "Compartido",
+      "stopped": "Ya no se comparte",
+      "empty": "Aún no has compartido nada. Comparte PNJ, lugares, objetos, saber y facciones con el botón de compartir.",
+      "fieldCount": "{count} campo | {count} campos",
+      "displayName": "Nombre para los jugadores (opcional)",
+      "displayNameHint": "P. ej. «El hombre misterioso». Vacío = nombre real ({name}). Vaciarlo después = la revelación.",
+      "storageFull": "El almacenamiento de esta partida está lleno. Comparte menos imágenes o deja de compartir algunos elementos.",
+      "rememberDefaults": "Recordar esta selección como predeterminada para {type}"
     }
   }
 }
