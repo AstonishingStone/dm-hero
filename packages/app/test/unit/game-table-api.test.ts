@@ -13,6 +13,7 @@ vi.mock('../../server/utils/db', async (importOriginal) => {
 
 // The player relay is a separate server - simulate it
 const relayCalls: string[] = []
+let relayRefusesHandouts = false
 let lastRelayPublicKeys: { signing: string, exchange: string } | null = null
 vi.mock('../../server/utils/relay', async (importOriginal) => {
   const original = await importOriginal<typeof import('../../server/utils/relay')>()
@@ -33,6 +34,11 @@ vi.mock('../../server/utils/relay', async (importOriginal) => {
     syncRelayPlayers: async () => {
       relayCalls.push('sync')
     },
+    putRelayHandout: async () => {
+      if (relayRefusesHandouts) throw Object.assign(new Error('Too large'), { statusCode: 413 })
+    },
+    // Campaign name / map for players - not part of these tests
+    putRelayState: async () => {},
   }
 })
 
@@ -75,6 +81,7 @@ afterAll(() => {
 
 beforeEach(() => {
   relayCalls.length = 0
+  relayRefusesHandouts = false
   db = getTestDb()
   campaignId = Number(db.prepare('INSERT INTO campaigns (name) VALUES (?)').run('Game Table').lastInsertRowid)
 })
@@ -175,5 +182,34 @@ describe('game table API', () => {
     expect(db.prepare('SELECT content_hash FROM game_table_shares').get()).toEqual({ content_hash: null })
     expect(db.prepare('SELECT COUNT(*) AS n FROM game_table_devices').get()).toEqual({ n: 0 })
     expect((db.prepare('SELECT e2e_keys FROM game_tables WHERE id = ?').get(table.id) as { e2e_keys: string }).e2e_keys).not.toBe(oldKeys)
+  })
+
+  it('handing a document to chosen players stores exactly them', async () => {
+    const table = await startGame()
+    const anna = await call<GameTablePlayer>('[id]/players.post.ts', { params: { id: String(table.id) }, body: { name: 'Anna' } })
+    await call<GameTablePlayer>('[id]/players.post.ts', { params: { id: String(table.id) }, body: { name: 'Ben' } })
+    const typeId = (db.prepare('SELECT id FROM entity_types WHERE name = ?').get('Lore') as { id: number }).id
+    const entity = Number(db.prepare('INSERT INTO entities (type_id, name, campaign_id) VALUES (?, ?, ?)').run(typeId, 'Briefe', campaignId).lastInsertRowid)
+    const doc = Number(db.prepare('INSERT INTO entity_documents (entity_id, title, content, date) VALUES (?, ?, ?, ?)').run(entity, 'Brief', 'Hallo', '2026-10-04').lastInsertRowid)
+
+    await call('[id]/handouts.put.ts', { params: { id: String(table.id) }, body: { documentId: doc, recipients: [anna.id] } })
+    expect(await call('[id]/handouts.get.ts', { params: { id: String(table.id) } })).toMatchObject([{ document_id: doc, recipients: [anna.id] }])
+
+    await call('[id]/handouts.put.ts', { params: { id: String(table.id) }, body: { documentId: doc, recipients: 'all' } })
+    expect(await call('[id]/handouts.get.ts', { params: { id: String(table.id) } })).toMatchObject([{ recipients: 'all' }])
+  })
+
+  it('a refused change keeps the previous recipients', async () => {
+    const table = await startGame()
+    const anna = await call<GameTablePlayer>('[id]/players.post.ts', { params: { id: String(table.id) }, body: { name: 'Anna' } })
+    const typeId = (db.prepare('SELECT id FROM entity_types WHERE name = ?').get('Lore') as { id: number }).id
+    const entity = Number(db.prepare('INSERT INTO entities (type_id, name, campaign_id) VALUES (?, ?, ?)').run(typeId, 'Briefe', campaignId).lastInsertRowid)
+    const doc = Number(db.prepare('INSERT INTO entity_documents (entity_id, title, content, date) VALUES (?, ?, ?, ?)').run(entity, 'Brief', 'Hallo', '2026-10-04').lastInsertRowid)
+    await call('[id]/handouts.put.ts', { params: { id: String(table.id) }, body: { documentId: doc, recipients: [anna.id] } })
+
+    relayRefusesHandouts = true
+    await expect(call('[id]/handouts.put.ts', { params: { id: String(table.id) }, body: { documentId: doc, recipients: 'all' } }))
+      .rejects.toMatchObject({ statusCode: 413 })
+    expect(await call('[id]/handouts.get.ts', { params: { id: String(table.id) } })).toMatchObject([{ recipients: [anna.id] }])
   })
 })
