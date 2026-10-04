@@ -2812,6 +2812,39 @@ export const migrations: Migration[] = [
       console.log('✅ Migration 61: Created game_table_share_files')
     },
   },
+  {
+    version: 62,
+    name: 'map_fog_and_shown_map',
+    up: (db) => {
+      // Fog of war per map (strokes as JSON, see types/fog.ts) - kept when the
+      // DM switches maps, so coming back shows the same fog.
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS map_fog (
+          map_id INTEGER PRIMARY KEY,
+          fog TEXT NOT NULL,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (map_id) REFERENCES campaign_maps(id) ON DELETE CASCADE
+        )
+      `)
+      // The one map the players see right now (null = none)
+      db.exec('ALTER TABLE game_tables ADD COLUMN shown_map_id INTEGER REFERENCES campaign_maps(id) ON DELETE SET NULL')
+
+      console.log('✅ Migration 62: Created map_fog, added shown_map_id to game_tables')
+    },
+  },
+  {
+    version: 63,
+    name: 'game_table_map_sync',
+    up: (db) => {
+      // What the players have of the shown map: uploaded image (JSON: map id,
+      // source, encrypted file ref, size) + hashes of the last sent map and fog.
+      db.exec('ALTER TABLE game_tables ADD COLUMN map_state TEXT')
+      db.exec('ALTER TABLE game_tables ADD COLUMN map_hash TEXT')
+      db.exec('ALTER TABLE game_tables ADD COLUMN fog_hash TEXT')
+
+      console.log('✅ Migration 63: Added map sync columns to game_tables')
+    },
+  },
 ]
 
 export async function runMigrations(db: Database.Database) {

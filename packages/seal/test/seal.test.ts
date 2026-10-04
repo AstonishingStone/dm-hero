@@ -3,6 +3,7 @@ import {
   createGameKeys, loadGameKeys, rotateGameKey, generateDeviceKeyPair, fingerprint, encryptFile, decryptFile,
   derivePairKey, exportPublicKey, generateExchangeKeyPair, generateGameKey, generateSigningKeyPair,
   importExchangePublicKey, importVerifyKey, open, seal, unwrapGameKey, wrapGameKey,
+  EMPTY_FOG, isMapFog, isPingContent, isTableFogContent, isTableMapContent, normalizeFog, pingColor, simplifyStroke,
   type EnvelopeHeader,
 } from '../src'
 
@@ -138,5 +139,42 @@ describe('game key rotation', () => {
     expect(rotated.signing).toEqual(stored.signing)
     expect(rotated.exchange).toEqual(stored.exchange)
     expect((await loadGameKeys(rotated)).epoch).toBe(2)
+  })
+})
+
+describe('table protocol', () => {
+  it('map and fog contents only pass as what they are', () => {
+    const map = { kind: 'map', mapId: 1, name: 'Welt', width: 100, height: 50, image: { fileId: 'f', key: 'k', iv: 'i', mime: 'image/webp' } }
+    const fog = { kind: 'fog', mapId: 1, fog: EMPTY_FOG }
+    expect(isTableMapContent(map)).toBe(true)
+    expect(isTableFogContent(fog)).toBe(true)
+    // The relay can't pass one off as the other
+    expect(isTableMapContent(fog)).toBe(false)
+    expect(isTableFogContent(map)).toBe(false)
+  })
+
+  it('fog points must lie in the map; painting past the edge is brought back to it', () => {
+    const outside = { base: 'covered', strokes: [{ mode: 'reveal', radius: 4, points: [[-3, 50], [104, 1e9]] }] }
+    expect(isMapFog(outside)).toBe(false)
+    const normalized = normalizeFog(outside)
+    expect(normalized.strokes[0]!.points).toEqual([[0, 50], [100, 100]])
+    expect(isMapFog(normalized)).toBe(true)
+    // Malformed stays malformed - for isMapFog to reject
+    expect(isMapFog(normalizeFog({ base: 'covered', strokes: [{ mode: 'reveal', radius: 4, points: [['x', 1]] }] }))).toBe(false)
+  })
+
+  it('simplifying a stroke keeps its shape with fewer points', () => {
+    const line = Array.from({ length: 100 }, (_, i) => [i, 10 + (i % 2) * 0.01] as [number, number])
+    expect(simplifyStroke(line, 0.1)).toEqual([[0, 10], [99, 10.01]])
+    const corner: Array<[number, number]> = [[0, 0], [5, 0], [10, 0], [10, 5], [10, 10]]
+    expect(simplifyStroke(corner, 0.1)).toEqual([[0, 0], [10, 0], [10, 10]])
+  })
+
+  it('pings: inside the map, notes at most 80 characters, same color everywhere', () => {
+    expect(isPingContent({ mapId: 1, x: 0, y: 100 })).toBe(true)
+    expect(isPingContent({ mapId: 1, x: -1, y: 5 })).toBe(false)
+    expect(isPingContent({ mapId: 1, x: 5, y: 5, text: 'x'.repeat(81) })).toBe(false)
+    expect(pingColor(7)).toBe(pingColor('7'))
+    expect(pingColor('dm')).toBe('#d4a574')
   })
 })

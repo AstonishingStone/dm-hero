@@ -2349,7 +2349,27 @@
       "fileTooLarge": "Datei zu groß. Maximale Größe: 50MB",
       "uploadFailed": "Karte konnte nicht hochgeladen werden",
       "updateFailed": "Karte konnte nicht aktualisiert werden"
-    }
+    },
+    "fog": {
+      "title": "Nebel des Krieges",
+      "reveal": "Aufdecken",
+      "cover": "Zudecken",
+      "brushSize": "Pinselgröße",
+      "size": {
+        "small": "Klein",
+        "medium": "Mittel",
+        "large": "Groß"
+      },
+      "undo": "Rückgängig",
+      "revealAll": "Alles aufdecken",
+      "coverAll": "Alles zudecken",
+      "hint": "Mit gedrückter Maustaste malen – deine Spieler sehen nur, was aufgedeckt ist",
+      "big": "Der Nebel wird sehr detailliert. „Alles aufdecken“ oder „Alles zudecken“ setzt ihn zurück.",
+      "full": "Der Nebel ist voll – weitere Striche gehen nicht. „Alles aufdecken“ oder „Alles zudecken“ setzt ihn zurück.",
+      "saveFailed": "Nebel konnte nicht gespeichert werden"
+    },
+    "helpPing": "Lange gedrückt halten: Ping für alle Spieler",
+    "helpNote": "Rechtsklick: kurze Notiz für alle Spieler"
   },
   "music": {
     "title": "Musik",
@@ -2797,6 +2817,22 @@
       "displayNameHint": "Z. B. „Der mysteriöse Mann“. Leer = echter Name ({name}). Später leeren = Enthüllung.",
       "storageFull": "Der Speicher dieses Spiels ist voll. Teile weniger Bilder oder nimm einzelne Freigaben zurück.",
       "rememberDefaults": "Diese Auswahl als Vorgabe für {type} merken"
+    },
+    "map": {
+      "show": "Den Spielern zeigen",
+      "shown": "Wird gezeigt",
+      "showHint": "Deine Spieler sehen diese Karte mit dem Nebel des Krieges – eine andere gezeigte Karte wird ersetzt",
+      "stopHint": "Nicht mehr zeigen",
+      "failed": "Karte konnte nicht gezeigt werden",
+      "you": "Du",
+      "noteTitle": "Notiz für die Spieler",
+      "noteLabel": "Text",
+      "noteHint": "Erscheint mit einem Ping an dieser Stelle und verschwindet nach ein paar Sekunden.",
+      "noteSend": "Zeigen",
+      "pending": {
+        "offline": "Gespeichert – deine Spieler bekommen die Karte, sobald der Spieltisch erreichbar ist.",
+        "tooLarge": "Das Kartenbild ist zu groß für den Spieltisch. Lade eine kleinere Version hoch."
+      }
     }
   }
 }

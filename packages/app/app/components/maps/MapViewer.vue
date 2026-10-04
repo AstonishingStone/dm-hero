@@ -4,6 +4,7 @@
 
 <script setup lang="ts">
 import type { CampaignMap, MapMarker, MapArea, MapClimateArea } from '~~/types/map'
+import { clampPercent, FOG_MAX_POINTS, simplifyStroke, type FogMode, type FogStroke, type MapFog } from '~~/types/fog'
 import type {
   Map as LeafletMap,
   ImageOverlay,
@@ -27,6 +28,9 @@ const props = defineProps<{
   climateWeather?: Record<number, { weather_type: string, temperature: number | null }>
   editMode?: boolean // Enable area drawing/editing
   measurePoints?: { x: number, y: number }[] // Points for measurement tool
+  fog?: MapFog | null // Fog of war (shown when set)
+  fogTool?: { mode: FogMode, radius: number } | null // Painting fog (map can't be dragged meanwhile)
+  pingEnabled?: boolean // Long press = ping, right-click = note (only while players see this map)
 }>()
 
 const emit = defineEmits<{
@@ -41,6 +45,9 @@ const emit = defineEmits<{
   areaDrag: [data: { area: MapArea, x: number, y: number }]
   climateAreaRightClick: [area: MapClimateArea]
   climateAreaDrag: [data: { area: MapClimateArea, x: number, y: number }]
+  fogStroke: [stroke: FogStroke]
+  longPress: [position: { x: number, y: number }]
+  mapRightClick: [position: { x: number, y: number }]
 }>()
 
 const { t } = useI18n()
@@ -140,6 +147,10 @@ watch(
   { deep: true },
 )
 
+// Fog of war: redraw on change, painting mode locks map dragging
+watch(() => props.fog, () => updateFog())
+watch(() => props.fogTool, () => applyFogTool())
+
 // Update measurement line when points change
 watch(
   () => props.measurePoints,
@@ -195,11 +206,22 @@ function initMap() {
     // Create measurement line layer (top)
     measureLineLayer = L.layerGroup().addTo(leafletMap)
 
+    // Fog of war: above areas, below markers
+    mapSize = { width: boundsWidth, height: boundsHeight }
+    leafletMap.createPane('fog').style.zIndex = '450'
+    fogCanvas = createFogCanvas(boundsWidth, boundsHeight, FOG_COLOR)
+    fogLayer = L.svgOverlay(fogCanvas.svg, bounds, { pane: 'fog', interactive: false })
+    setupFogPainting()
+    updateFog()
+    applyFogTool()
+
     // Add areas and markers
     updateClimateAreas()
     updateAreas()
     updateMarkers()
     updateMeasureLine()
+
+    setupLongPress()
 
     // Handle map clicks
     leafletMap.on('click', (e: LeafletMouseEvent) => {
@@ -231,6 +253,171 @@ function initMap() {
     })
   }
   img.src = `/uploads/${props.map.image_url}`
+}
+
+// ---------------------------------------------------------------------------
+// Fog of war
+// ---------------------------------------------------------------------------
+
+// The DM sees through the fog (half transparent) - players won't
+const FOG_COLOR = '#0b0d14'
+const FOG_OPACITY = 0.55
+
+let mapSize = { width: 1000, height: 1000 }
+let fogCanvas: ReturnType<typeof createFogCanvas> | null = null
+let fogLayer: L.SVGOverlay | null = null
+let paintingStroke: FogStroke | null = null
+
+function updateFog() {
+  if (!leafletMap || !fogLayer || !fogCanvas) return
+  if (!props.fog) {
+    fogLayer.remove()
+    return
+  }
+  fogCanvas.render(props.fog)
+  fogCanvas.svg.style.opacity = String(FOG_OPACITY)
+  if (!leafletMap.hasLayer(fogLayer)) fogLayer.addTo(leafletMap)
+}
+
+function applyFogTool() {
+  if (!leafletMap || !mapContainer.value) return
+  if (props.fogTool) leafletMap.dragging.disable()
+  else leafletMap.dragging.enable()
+  mapContainer.value.classList.toggle('fog-painting', !!props.fogTool)
+}
+
+/** Lat/lng of the map -> percent of the image */
+/** Lat/lng of the map -> percent of the image (past the edge = at the edge) */
+function toPercent(latlng: L.LatLng): [number, number] {
+  return [
+    clampPercent(Math.round(latlng.lng / mapSize.width * 10000) / 100),
+    clampPercent(Math.round((mapSize.height - latlng.lat) / mapSize.height * 10000) / 100),
+  ]
+}
+
+function finishStroke() {
+  if (!paintingStroke) return
+  const stroke = paintingStroke
+  paintingStroke = null
+  // Same look with far fewer points - keeps the fog small enough to send live
+  emit('fogStroke', { ...stroke, points: simplifyStroke(stroke.points, stroke.radius * 0.1) })
+}
+
+function setupFogPainting() {
+  if (!leafletMap) return
+  leafletMap.on('mousedown', (e: LeafletMouseEvent) => {
+    if (!props.fogTool || !fogCanvas || e.originalEvent.button !== 0) return
+    paintingStroke = { mode: props.fogTool.mode, radius: props.fogTool.radius, points: [toPercent(e.latlng)] }
+    fogCanvas.livePath(paintingStroke)
+  })
+  leafletMap.on('mousemove', (e: LeafletMouseEvent) => {
+    if (!paintingStroke || !fogCanvas) return
+    const point = toPercent(e.latlng)
+    const last = paintingStroke.points.at(-1)!
+    // Only every few pixels - keeps strokes small enough to send live
+    if (Math.hypot(point[0] - last[0], point[1] - last[1]) < paintingStroke.radius * 0.25) return
+    paintingStroke.points.push(point)
+    fogCanvas.livePath(paintingStroke)
+    // Very long stroke: send this part, go on with a new one
+    if (paintingStroke.points.length >= FOG_MAX_POINTS) {
+      const { mode, radius } = paintingStroke
+      finishStroke()
+      paintingStroke = { mode, radius, points: [point] }
+      fogCanvas.livePath(paintingStroke)
+    }
+  })
+  leafletMap.on('mouseup', finishStroke)
+  // Released outside the map
+  document.addEventListener('mouseup', finishStroke)
+}
+
+onUnmounted(() => document.removeEventListener('mouseup', finishStroke))
+
+// ---------------------------------------------------------------------------
+// Long press = ping (pulses three times, like Roll20)
+// ---------------------------------------------------------------------------
+
+const LONG_PRESS_MS = 500
+const LONG_PRESS_MOVE_PX = 6
+let pressTimer: ReturnType<typeof setTimeout> | null = null
+let pressStart: { x: number, y: number } | null = null
+let suppressClick = false
+
+function cancelPress() {
+  if (pressTimer) clearTimeout(pressTimer)
+  pressTimer = null
+  pressStart = null
+}
+
+// On the DOM (capture phase), not Leaflet events: areas and markers stop
+// Leaflet's mousedown, but pings must work on them too (cities!)
+function onPressStart(event: PointerEvent) {
+  cancelPress()
+  if (!props.pingEnabled || props.fogTool || event.button !== 0 || !leafletMap) return
+  pressStart = { x: event.clientX, y: event.clientY }
+  const [x, y] = toPercent(leafletMap.mouseEventToLatLng(event))
+  pressTimer = setTimeout(() => {
+    pressTimer = null
+    pressStart = null
+    suppressClick = true
+    emit('longPress', { x, y })
+  }, LONG_PRESS_MS)
+}
+
+function onPressMove(event: PointerEvent) {
+  // Dragging the map (or a marker) is not a long press
+  if (pressStart && Math.hypot(event.clientX - pressStart.x, event.clientY - pressStart.y) > LONG_PRESS_MOVE_PX) cancelPress()
+}
+
+// The click that ends a long press is not a click - not on the map, area or marker
+function onClickCapture(event: MouseEvent) {
+  if (!suppressClick) return
+  suppressClick = false
+  event.stopPropagation()
+  event.preventDefault()
+}
+
+function setupLongPress() {
+  const el = mapContainer.value
+  if (!el || !leafletMap) return
+  el.addEventListener('pointerdown', onPressStart, true)
+  el.addEventListener('pointermove', onPressMove, true)
+  el.addEventListener('pointerup', cancelPress, true)
+  el.addEventListener('click', onClickCapture, true)
+  leafletMap.on('zoomstart', cancelPress)
+  // Right-click on the map itself (markers/areas handle their own) - only when a note can follow
+  leafletMap.on('contextmenu', (e: LeafletMouseEvent) => {
+    if (!props.pingEnabled) return
+    e.originalEvent.preventDefault()
+    const [x, y] = toPercent(e.latlng)
+    emit('mapRightClick', { x, y })
+  })
+}
+
+onUnmounted(() => {
+  cancelPress()
+  const el = mapContainer.value
+  if (!el) return
+  el.removeEventListener('pointerdown', onPressStart, true)
+  el.removeEventListener('pointermove', onPressMove, true)
+  el.removeEventListener('pointerup', cancelPress, true)
+  el.removeEventListener('click', onClickCapture, true)
+})
+
+/** Show a ping at a spot (percent): a ring pulsing three times + who pinged (or a note, shown longer) */
+function ping(x: number, y: number, label: string, color: string, durationMs: number) {
+  if (!leafletMap || !L) return
+  const icon = L.divIcon({
+    className: 'map-ping',
+    html: `<span class="map-ping-ring" style="--ping-color:${color}"></span><span class="map-ping-label"></span>`,
+    iconSize: [0, 0],
+  })
+  const marker = L.marker([mapSize.height - y / 100 * mapSize.height, x / 100 * mapSize.width], { icon, interactive: false, keyboard: false, zIndexOffset: 2000 })
+    .addTo(leafletMap)
+  // Text via textContent - player names never become HTML
+  const labelEl = marker.getElement()?.querySelector('.map-ping-label')
+  if (labelEl) labelEl.textContent = label
+  setTimeout(() => marker.remove(), durationMs)
 }
 
 // Threshold: show labels only when zoomed in enough
@@ -818,6 +1005,7 @@ function updateMeasureLine() {
 // Expose method to programmatically add marker at position
 defineExpose({
   getMap: () => leafletMap,
+  ping,
 })
 </script>
 
@@ -901,6 +1089,62 @@ defineExpose({
 
 .marker-pin {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Painting fog of war: markers and areas let the brush through */
+.map-viewer.fog-painting,
+.map-viewer.fog-painting .leaflet-interactive {
+  cursor: crosshair !important;
+}
+
+.map-viewer.fog-painting .leaflet-marker-pane,
+.map-viewer.fog-painting .leaflet-overlay-pane .leaflet-interactive {
+  pointer-events: none !important;
+}
+
+/* Ping: ring pulsing three times */
+.map-ping {
+  pointer-events: none;
+}
+
+.map-ping-ring {
+  position: absolute;
+  left: -30px;
+  top: -30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 4px solid var(--ping-color);
+  box-shadow: 0 0 12px var(--ping-color);
+  animation: map-ping-pulse 0.8s ease-out 3 forwards;
+}
+
+.map-ping-label {
+  position: absolute;
+  top: 34px;
+  left: 0;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@keyframes map-ping-pulse {
+  from { transform: scale(0.2); opacity: 1; }
+  to { transform: scale(1.4); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-ping-ring {
+    animation: none;
+  }
 }
 
 /* Area resize handle */

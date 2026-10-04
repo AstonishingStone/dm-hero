@@ -2349,7 +2349,27 @@
       "fileTooLarge": "File troppo grande. Dimensione massima: 50MB",
       "uploadFailed": "Caricamento della mappa non riuscito",
       "updateFailed": "Aggiornamento della mappa non riuscito"
-    }
+    },
+    "fog": {
+      "title": "Nebbia di guerra",
+      "reveal": "Rivela",
+      "cover": "Copri",
+      "brushSize": "Dimensione pennello",
+      "size": {
+        "small": "Piccolo",
+        "medium": "Medio",
+        "large": "Grande"
+      },
+      "undo": "Annulla",
+      "revealAll": "Rivela tutto",
+      "coverAll": "Copri tutto",
+      "hint": "Tieni premuto il tasto del mouse per dipingere – i tuoi giocatori vedono solo ciò che è rivelato",
+      "big": "La nebbia sta diventando molto dettagliata. «Rivela tutto» o «Copri tutto» la azzera.",
+      "full": "La nebbia è piena – niente più tratti. «Rivela tutto» o «Copri tutto» la azzera.",
+      "saveFailed": "Impossibile salvare la nebbia"
+    },
+    "helpPing": "Tieni premuto: ping per tutti i giocatori",
+    "helpNote": "Clic destro: breve nota per tutti i giocatori"
   },
   "music": {
     "title": "Musica",
@@ -2797,6 +2817,22 @@
       "displayNameHint": "Es. «L'uomo misterioso». Vuoto = nome reale ({name}). Svuotarlo dopo = la rivelazione.",
       "storageFull": "Lo spazio di questa partita è pieno. Condividi meno immagini o smetti di condividere alcuni elementi.",
       "rememberDefaults": "Ricorda questa selezione come predefinita per {type}"
+    },
+    "map": {
+      "show": "Mostra ai giocatori",
+      "shown": "Mostrata",
+      "showHint": "I tuoi giocatori vedono questa mappa con la sua nebbia di guerra – sostituisce qualsiasi altra mappa mostrata",
+      "stopHint": "Smetti di mostrare",
+      "failed": "Impossibile mostrare la mappa",
+      "you": "Tu",
+      "noteTitle": "Nota per i giocatori",
+      "noteLabel": "Testo",
+      "noteHint": "Appare con un ping in questo punto e scompare dopo qualche secondo.",
+      "noteSend": "Mostra",
+      "pending": {
+        "offline": "Salvato – i tuoi giocatori riceveranno la mappa appena il tavolo di gioco sarà raggiungibile.",
+        "tooLarge": "L’immagine della mappa è troppo grande per il tavolo di gioco. Carica una versione più piccola."
+      }
     }
   }
 }
