@@ -82,6 +82,19 @@
       "pending": "on its way …",
       "failed": "The message could not be sent. Please try again in a moment.",
       "slowDown": "Take a breath – you just sent a lot of messages. You can write again within a minute."
+    },
+    "weather": {
+      "sunny": "Sunny",
+      "partlyCloudy": "Partly cloudy",
+      "cloudy": "Cloudy",
+      "rain": "Rain",
+      "thunderstorm": "Thunderstorm",
+      "snow": "Snow",
+      "heavySnow": "Heavy snow",
+      "fog": "Fog",
+      "windy": "Windy",
+      "heavyRain": "Heavy rain",
+      "hail": "Hail"
     }
   },
   "cookieNotice": {

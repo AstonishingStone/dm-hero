@@ -82,6 +82,19 @@
       "pending": "wird zugestellt …",
       "failed": "Nachricht konnte nicht gesendet werden. Versuch es gleich noch einmal.",
       "slowDown": "Kurz durchatmen – du hast gerade viele Nachrichten geschickt. In spätestens einer Minute geht es weiter."
+    },
+    "weather": {
+      "sunny": "Sonnig",
+      "partlyCloudy": "Teilweise bewölkt",
+      "cloudy": "Bewölkt",
+      "rain": "Regen",
+      "thunderstorm": "Gewitter",
+      "snow": "Schnee",
+      "heavySnow": "Starker Schneefall",
+      "fog": "Nebel",
+      "windy": "Windig",
+      "heavyRain": "Starker Regen",
+      "hail": "Hagel"
     }
   },
   "cookieNotice": {

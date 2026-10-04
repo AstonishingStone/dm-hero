@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-dvh flex flex-col font-sans">
+  <!-- Own stacking context: the weather (z -1) sits above the page background, below all content -->
+  <div class="relative z-1 min-h-dvh flex flex-col font-sans">
     <header class="w-full max-w-6xl mx-auto px-5 pt-8 pb-6 flex items-center gap-4">
       <img src="/logo.png" alt="DM Hero" width="56" height="56" class="size-14 rounded-xl shrink-0" />
       <div class="min-w-0">
@@ -17,6 +18,11 @@
           <span v-if="encrypted" class="inline-flex items-center gap-1.5 text-success">
             <span aria-hidden="true">🔒</span> {{ $t('play.encrypted') }}
           </span>
+        </p>
+        <!-- Today's in-game weather - outside the status region, so screen readers don't announce every change -->
+        <p v-if="weather" class="m-0 mt-1 inline-flex items-center gap-1.5 text-sm text-muted">
+          <span aria-hidden="true">{{ TABLE_WEATHER_ICONS[weather.type] }}</span>
+          {{ $t(`play.weather.${weather.type}`) }}<template v-if="weather.temperature !== null"> · {{ weather.temperature }}°</template>
         </p>
       </div>
     </header>
@@ -106,6 +112,8 @@
       </aside>
     </main>
 
+    <WeatherBackdrop :weather="weather" />
+
     <RevealBanner :reveal="currentReveal" @show="showRevealed" />
 
     <!-- Phones: one share at a time, full screen -->
@@ -116,10 +124,12 @@
 </template>
 
 <script setup lang="ts">
+import { TABLE_WEATHER_ICONS } from '@dm-hero/seal'
+
 const route = useRoute()
 const gameId = String(route.params.gameId)
 const { connect } = usePlayerSession()
-const { status, name, encrypted, symbols, shares, reveals, tableMap, tableFog, pings, ping, campaignName, handouts, messages, pendingMessages, sendMessage } = connect(gameId)
+const { status, name, encrypted, symbols, shares, reveals, tableMap, tableFog, pings, ping, campaignName, handouts, messages, pendingMessages, sendMessage, weather } = connect(gameId)
 
 // Tab title: the campaign, once known
 useHead(() => (campaignName.value ? { title: `${campaignName.value} – DM Hero` } : {}))

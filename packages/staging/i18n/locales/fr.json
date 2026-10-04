@@ -82,6 +82,19 @@
       "pending": "en cours d’envoi …",
       "failed": "Le message n’a pas pu être envoyé. Réessaie dans un instant.",
       "slowDown": "Respire un instant – tu viens d’envoyer beaucoup de messages. Tu pourras réécrire d’ici une minute."
+    },
+    "weather": {
+      "sunny": "Ensoleillé",
+      "partlyCloudy": "Partiellement nuageux",
+      "cloudy": "Nuageux",
+      "rain": "Pluie",
+      "thunderstorm": "Orage",
+      "snow": "Neige",
+      "heavySnow": "Fortes chutes de neige",
+      "fog": "Brouillard",
+      "windy": "Venteux",
+      "heavyRain": "Forte pluie",
+      "hail": "Grêle"
     }
   },
   "cookieNotice": {

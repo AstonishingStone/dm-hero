@@ -44,10 +44,46 @@ export interface TableFogContent {
   fog: MapFog
 }
 
+/** Every weather a DM can set in DM Hero's calendar - one list for DM Hero and the player app */
+export const TABLE_WEATHER_TYPES = [
+  'sunny', 'partlyCloudy', 'cloudy', 'rain', 'heavyRain', 'thunderstorm', 'snow', 'heavySnow', 'fog', 'windy', 'hail',
+] as const
+export type TableWeatherType = typeof TABLE_WEATHER_TYPES[number]
+
+export const TABLE_WEATHER_ICONS: Record<TableWeatherType, string> = {
+  sunny: '☀️',
+  partlyCloudy: '⛅',
+  cloudy: '☁️',
+  rain: '🌧️',
+  heavyRain: '🌧️',
+  thunderstorm: '⛈️',
+  snow: '🌨️',
+  heavySnow: '❄️',
+  fog: '🌫️',
+  windy: '💨',
+  hail: '🧊',
+}
+
+/** Today's in-game weather (temperature without unit, as DM Hero shows it) */
+export interface TableWeather {
+  type: TableWeatherType
+  temperature: number | null
+}
+
+/** A known weather, or nothing - an odd value (import, old data) never breaks anything else */
+export function parseTableWeather(value: unknown): TableWeather | undefined {
+  const w = value as { type?: unknown, temperature?: unknown } | null | undefined
+  if (!w || !(TABLE_WEATHER_TYPES as readonly unknown[]).includes(w.type)) return undefined
+  const temperature = typeof w.temperature === 'number' && Number.isFinite(w.temperature) ? w.temperature : null
+  return { type: w.type as TableWeatherType, temperature }
+}
+
 /** Slot "info": about the game itself - shown to joined players */
 export interface TableInfoContent {
   kind: 'info'
   campaignName: string
+  /** Missing = no calendar or no weather for today. Receivers read it with parseTableWeather - an odd one is ignored, not fatal */
+  weather?: TableWeather
 }
 
 export const CAMPAIGN_NAME_MAX = 200

@@ -4,3 +4,15 @@
  * `overrides` which sits after it, so app-level CSS wins without !important.
  */
 @layer base, vuetify, overrides;
+
+/*
+ * Vuetify 4 no longer resets heading margins (v3 did) - every h1-h6 got the
+ * browser's margins (almost a full line on h1). Back to v3's zero, the app stays
+ * compact. Lowest layer: classes like mb-2 and unlayered styles (e.g. the
+ * markdown editor) still win.
+ */
+@layer base {
+  :where(h1, h2, h3, h4, h5, h6) {
+    margin: 0;
+  }
+}

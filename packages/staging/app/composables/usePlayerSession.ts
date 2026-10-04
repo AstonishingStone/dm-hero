@@ -1,6 +1,6 @@
 import {
   derivePairKey, fingerprint, importExchangePublicKey, importVerifyKey, isChatThreadContent, isHandoutContent, isPingContent, isTableFogContent, isTableInfoContent, isTableMapContent,
-  NOTE_MS, open, PING_MS, seal, unwrapGameKey, type ChatMessage, type Envelope, type HandoutContent, type TableFogContent, type TableMapContent,
+  NOTE_MS, open, parseTableWeather, PING_MS, seal, unwrapGameKey, type ChatMessage, type Envelope, type HandoutContent, type TableFogContent, type TableMapContent, type TableWeather,
 } from '@dm-hero/seal'
 
 // Player side of a game: join with code + PIN, then stay connected via SSE
@@ -45,6 +45,8 @@ export function usePlayerSession() {
     let playerId = ''
     /** The DM's campaign (sent encrypted like everything else) */
     const campaignName = ref('')
+    /** Today's in-game weather (null = no calendar / nothing for today) */
+    const weather = ref<TableWeather | null>(null)
     /** Private conversation with the DM (newest last) + own messages not yet confirmed by DM Hero */
     const messages = ref<ChatMessage[]>([])
     const pendingMessages = ref<ChatMessage[]>([])
@@ -132,7 +134,11 @@ export function usePlayerSession() {
         // Content must match its slot - the relay can't pass the fog off as the map
         if (slot === 'map' && isTableMapContent(content)) tableMap.value = content
         else if (slot === 'fog' && isTableFogContent(content)) tableFog.value = content
-        else if (slot === 'info' && isTableInfoContent(content)) campaignName.value = content.campaignName
+        else if (slot === 'info' && isTableInfoContent(content)) {
+          campaignName.value = content.campaignName
+          // An odd weather is ignored - the campaign name still counts
+          weather.value = parseTableWeather(content.weather) ?? null
+        }
         else return
         stateVersions.set(slot, { epoch: header.epoch, seq: header.seq })
       }
@@ -327,7 +333,7 @@ export function usePlayerSession() {
     }
 
     onBeforeUnmount(() => source.close())
-    return { status, name, encrypted, symbols, shares, reveals, tableMap, tableFog, pings, ping, campaignName, handouts, messages, pendingMessages, sendMessage }
+    return { status, name, encrypted, symbols, shares, reveals, tableMap, tableFog, pings, ping, campaignName, handouts, messages, pendingMessages, sendMessage, weather }
   }
 
   return { join, connect }

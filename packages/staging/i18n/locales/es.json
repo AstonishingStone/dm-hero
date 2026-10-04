@@ -82,6 +82,19 @@
       "pending": "enviando …",
       "failed": "No se pudo enviar el mensaje. Inténtalo de nuevo en un momento.",
       "slowDown": "Respira un momento: acabas de enviar muchos mensajes. Podrás volver a escribir en menos de un minuto."
+    },
+    "weather": {
+      "sunny": "Soleado",
+      "partlyCloudy": "Parcialmente nublado",
+      "cloudy": "Nublado",
+      "rain": "Lluvia",
+      "thunderstorm": "Tormenta",
+      "snow": "Nieve",
+      "heavySnow": "Nevada intensa",
+      "fog": "Niebla",
+      "windy": "Ventoso",
+      "heavyRain": "Lluvia intensa",
+      "hail": "Granizo"
     }
   },
   "cookieNotice": {
