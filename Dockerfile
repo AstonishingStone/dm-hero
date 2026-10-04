@@ -62,6 +62,9 @@ COPY --from=builder /app/packages/app/package.json .output/server/
 # Install production dependencies directly into .output/server/node_modules
 # Note: Using --no-frozen-lockfile because we only have the app's package.json, not the full monorepo lockfile
 WORKDIR /app/.output/server
+# Workspace packages (@dm-hero/seal) are bundled into the Nitro output already and
+# don't exist outside the monorepo - drop them before installing, or pnpm fails
+RUN node -e "const fs = require('fs'); const p = JSON.parse(fs.readFileSync('package.json', 'utf8')); for (const k of ['dependencies', 'devDependencies', 'optionalDependencies']) for (const [n, v] of Object.entries(p[k] || {})) if (String(v).startsWith('workspace:')) delete p[k][n]; fs.writeFileSync('package.json', JSON.stringify(p, null, 2))"
 RUN pnpm install --prod --ignore-workspace
 
 # Build better-sqlite3 native bindings (CRITICAL!)
