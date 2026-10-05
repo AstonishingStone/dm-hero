@@ -163,6 +163,8 @@ function changeLocale(newLocale: string) {
 }
 
 function getEntityPath(entityType: string, entityId: number, entityName: string): string {
+  // Scenario entries open in the tree, selected
+  if (entityType === 'StoryNode') return `/story?node=${entityId}`
   // Map entity types to their corresponding routes
   const typeMap: Record<string, string> = {
     NPC: '/npcs',

@@ -22,6 +22,7 @@ interface SessionRow {
   updated_at: string
   mentions_count: number
   attendance_count: number
+  story_count: number
   cover_image_url: string | null
 }
 
@@ -62,6 +63,7 @@ export default defineEventHandler((event) => {
       s.updated_at,
       (SELECT COUNT(*) FROM session_mentions WHERE session_id = s.id) as mentions_count,
       (SELECT COUNT(*) FROM session_attendance WHERE session_id = s.id) as attendance_count,
+      (SELECT COUNT(*) FROM story_node_sessions l JOIN entities e ON e.id = l.node_id AND e.deleted_at IS NULL WHERE l.session_id = s.id) as story_count,
       (SELECT image_url FROM session_images WHERE session_id = s.id AND is_primary = 1 LIMIT 1) as cover_image_url
     FROM sessions s
     WHERE s.campaign_id = ?

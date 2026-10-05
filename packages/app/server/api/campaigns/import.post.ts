@@ -38,6 +38,8 @@ import { isExportCompatible, isExportFromNewerVersion } from '~~/types/export'
 // Get app version from package.json
 import pkg from '~~/package.json'
 import { sanitizeMusicLinks } from '~~/server/utils/music-links'
+import { syncStoryNodeMentions } from '~~/server/utils/extract-mentions'
+import { STORY_NODE_TEXT_FIELDS } from '~~/types/story'
 
 // Dynamic import for unzipper (ESM)
 let unzipper: typeof import('unzipper')
@@ -772,8 +774,8 @@ export default defineEventHandler(async (event) => {
 
     if (manifest.entities && manifest.entities.length > 0) {
       const insertEntity = db.prepare(`
-        INSERT INTO entities (campaign_id, type_id, name, description, metadata, image_url, location_id, parent_entity_id, created_at, updated_at, archived_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO entities (campaign_id, type_id, name, description, metadata, image_url, location_id, parent_entity_id, sort_order, created_at, updated_at, archived_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
 
       // First pass: insert all entities without references (location_id, parent_entity_id)
@@ -799,6 +801,7 @@ export default defineEventHandler(async (event) => {
           imageUrl,
           null, // location_id - set in second pass
           null, // parent_entity_id - set in second pass
+          entity.sort_order ?? 0,
           entity.created_at || new Date().toISOString(),
           entity.updated_at || new Date().toISOString(),
           entity.archived_at || null,
@@ -1717,7 +1720,7 @@ export default defineEventHandler(async (event) => {
     const transformEntityLinks = (text: string | null): string | null => {
       if (!text) return null
 
-      return text.replace(/\{\{(npc|location|item|faction|lore|player|quest|session):(entity:\d+)\}\}/g, (match, type, exportId) => {
+      return text.replace(/\{\{(npc|location|item|faction|lore|player|quest|story|session):(entity:\d+)\}\}/g, (match, type, exportId) => {
         const newId = idMapping.entities.get(exportId)
         if (newId) {
           return `{{${type}:${newId}}}`
@@ -1738,6 +1741,49 @@ export default defineEventHandler(async (event) => {
             updateDescription.run(transformed, newId)
           }
         }
+      }
+    }
+
+    // Story nodes: links in the prep texts (metadata), then rebuild their mentions
+    if (idMapping.entities.size > 0) {
+      const storyNodes = db.prepare(`
+        SELECT e.id, e.description, e.metadata FROM entities e
+        JOIN entity_types et ON et.id = e.type_id AND et.name = 'StoryNode'
+        WHERE e.campaign_id = ? AND e.deleted_at IS NULL
+      `).all(campaignId) as Array<{ id: number, description: string | null, metadata: string | null }>
+      const importedIds = new Set(idMapping.entities.values())
+      const updateMetadata = db.prepare('UPDATE entities SET metadata = ? WHERE id = ?')
+      for (const node of storyNodes) {
+        if (!importedIds.has(node.id) || !node.metadata) continue
+        const metadata = JSON.parse(node.metadata) as Record<string, unknown>
+        for (const field of STORY_NODE_TEXT_FIELDS) {
+          if (typeof metadata[field] === 'string') metadata[field] = transformEntityLinks(metadata[field] as string) ?? ''
+        }
+        updateMetadata.run(JSON.stringify(metadata), node.id)
+        const description = (db.prepare('SELECT description FROM entities WHERE id = ?').get(node.id) as { description: string | null }).description
+        syncStoryNodeMentions(db, node.id, [description, ...STORY_NODE_TEXT_FIELDS.map(f => metadata[f])].filter(Boolean).join('\n'))
+      }
+    }
+
+    // Story node links to sessions and maps
+    const insertStoryLink = (table: 'story_node_sessions' | 'story_node_maps', column: 'session_id' | 'map_id') =>
+      db.prepare(`INSERT OR IGNORE INTO ${table} (node_id, ${column}) VALUES (?, ?)`)
+    if (manifest.storyNodeSessions?.length) {
+      const insert = insertStoryLink('story_node_sessions', 'session_id')
+      for (const link of manifest.storyNodeSessions) {
+        const nodeId = idMapping.entities.get(link.node)
+        const sessionId = idMapping.sessions.get(link.session)
+        if (nodeId && sessionId) insert.run(nodeId, sessionId)
+        else stats.skipped++
+      }
+    }
+    if (manifest.storyNodeMaps?.length) {
+      const insert = insertStoryLink('story_node_maps', 'map_id')
+      for (const link of manifest.storyNodeMaps) {
+        const nodeId = idMapping.entities.get(link.node)
+        const mapId = idMapping.maps.get(link.map)
+        if (nodeId && mapId) insert.run(nodeId, mapId)
+        else stats.skipped++
       }
     }
 
