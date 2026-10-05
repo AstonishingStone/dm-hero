@@ -97,18 +97,27 @@ async function load() {
   }
 }
 
-async function save(nodeIds: number[]) {
-  try {
-    linked.value = await $fetch<StoryNodeListItem[]>(`/api/story/by-session/${props.sessionId}`, {
-      method: 'PUT',
-      body: { nodeIds },
-    })
-    emit('updated', linked.value.length)
-  }
-  catch (error) {
-    console.error('Failed to save session scenes:', error)
-    snackbarStore.error(t('common.error'))
-  }
+// Each save replaces the whole list - run them one after another, so an older
+// request can't finish last and overwrite a newer selection
+let saveQueue: Promise<void> = Promise.resolve()
+function save(nodeIds: number[]) {
+  const sessionId = props.sessionId
+  saveQueue = saveQueue.then(async () => {
+    try {
+      const result = await $fetch<StoryNodeListItem[]>(`/api/story/by-session/${sessionId}`, {
+        method: 'PUT',
+        body: { nodeIds },
+      })
+      if (sessionId !== props.sessionId) return
+      linked.value = result
+      emit('updated', result.length)
+    }
+    catch (error) {
+      console.error('Failed to save session scenes:', error)
+      snackbarStore.error(t('common.error'))
+    }
+  })
+  return saveQueue
 }
 
 watch(() => [props.sessionId, props.campaignId], load, { immediate: true })

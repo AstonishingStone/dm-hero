@@ -139,7 +139,7 @@ export interface StoryTreeContext {
   addText: Ref<string>
   startAdd: (parentId: number | null) => void
   cancelAdd: () => void
-  /** Creates the entry under the current add parent; resolves when done */
+  /** Creates the entry under the current add parent; rejects if that failed */
   submitAdd: (name: string) => Promise<void>
   indent: () => void
   outdent: () => void
@@ -167,24 +167,32 @@ watch(() => tree.adding.value === props.parentId, async (active) => {
   addInput.value?.focus()
 }, { immediate: true })
 
-async function submit(refocus = true) {
+/** Creates the typed entry; false if that failed (the name stays in the field) */
+async function submit(refocus = true): Promise<boolean> {
   const name = tree.addText.value.trim()
   if (!name) {
     tree.cancelAdd()
-    return
+    return true
   }
   submitting = true
+  let succeeded = false
   try {
     await tree.submitAdd(name)
     tree.addText.value = ''
+    succeeded = true
+  }
+  catch {
+    // submitAdd already reported it
   }
   finally {
     submitting = false
   }
+  // Back in the field: the next entry, or another try with the same name
   if (refocus) {
     await nextTick()
     addInput.value?.focus()
   }
+  return succeeded
 }
 
 // Leaving the field: keep what's typed, then close
@@ -194,7 +202,8 @@ async function onBlur() {
   await nextTick()
   if (tree.adding.value !== props.parentId) return
   if (document.activeElement === addInput.value) return
-  if (tree.addText.value.trim()) await submit(false)
+  // Couldn't be created: keep the row and its text instead of throwing it away
+  if (tree.addText.value.trim() && !(await submit(false))) return
   tree.cancelAdd()
 }
 

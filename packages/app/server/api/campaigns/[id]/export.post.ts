@@ -177,7 +177,17 @@ export default defineEventHandler(async (event) => {
     entityIdToTypeName.set(e.id, typeName)
   })
 
-  // Helper to transform entity links in text: {{npc:123}} -> {{npc:entity:1}}
+  // Session export ids, known before any text is transformed: {{session:<id>}}
+  // links point at sessions, not entities (full export only - sessions aren't in a partial one)
+  const sessionExportIdMap = new Map<number, string>()
+  if (mode === 'full') {
+    const sessionIds = db
+      .prepare('SELECT id FROM sessions WHERE campaign_id = ? AND deleted_at IS NULL ORDER BY session_number ASC, id ASC')
+      .all(campaignId) as Array<{ id: number }>
+    sessionIds.forEach((s, i) => sessionExportIdMap.set(s.id, `session:${i + 1}`))
+  }
+
+  // Helper to transform entity links in text: {{npc:123}} -> {{npc:entity:1}}, {{session:4}} -> {{session:session:2}}
   // This ensures links are portable across export/import cycles
   const transformEntityLinks = (text: string | null | undefined): string | undefined => {
     if (!text) return undefined
@@ -185,7 +195,7 @@ export default defineEventHandler(async (event) => {
     // Match patterns like {{npc:123}}, {{location:456}}, etc.
     return text.replace(/\{\{(npc|location|item|faction|lore|player|quest|story|session):(\d+)\}\}/g, (match, type, idStr) => {
       const id = parseInt(idStr, 10)
-      const exportId = entityExportIdMap.get(id)
+      const exportId = type === 'session' ? sessionExportIdMap.get(id) : entityExportIdMap.get(id)
       if (exportId) {
         return `{{${type}:${exportId}}}`
       }
@@ -434,7 +444,6 @@ export default defineEventHandler(async (event) => {
   let exportNotes: ExportNote[] = []
   let exportPinboard: ExportPinboardItem[] = []
 
-  const sessionExportIdMap = new Map<number, string>()
   const eventExportIdMap = new Map<number, string>()
   const mapExportIdMap = new Map<number, string>()
   const audioExportIdMap = new Map<number, string>()
@@ -449,7 +458,7 @@ export default defineEventHandler(async (event) => {
              duration_minutes, music_links, calendar_event_id, created_at, updated_at
       FROM sessions
       WHERE campaign_id = ? AND deleted_at IS NULL
-      ORDER BY session_number ASC
+      ORDER BY session_number ASC, id ASC
     `,
       )
       .all(campaignId) as Array<{
@@ -470,9 +479,7 @@ export default defineEventHandler(async (event) => {
       updated_at: string
     }>
 
-    sessions.forEach((s, i) => {
-      sessionExportIdMap.set(s.id, `session:${i + 1}`)
-    })
+    // Export ids were assigned above (same query order), before the texts were transformed
 
     exportSessions = sessions.map(s => ({
       _exportId: sessionExportIdMap.get(s.id)!,

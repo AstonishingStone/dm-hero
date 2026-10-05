@@ -1716,11 +1716,18 @@ export default defineEventHandler(async (event) => {
     // POST-PROCESSING: Transform entity links to new IDs
     // ==========================================================================
 
-    // Helper to transform entity links: {{npc:entity:1}} -> {{npc:567}}
+    // Helper to transform entity links: {{npc:entity:1}} -> {{npc:567}}, {{session:session:2}} -> {{session:89}}
     const transformEntityLinks = (text: string | null): string | null => {
       if (!text) return null
 
-      return text.replace(/\{\{(npc|location|item|faction|lore|player|quest|story|session):(entity:\d+)\}\}/g, (match, type, exportId) => {
+      return text.replace(/\{\{session:(session:\d+)\}\}/g, (match, exportId) => {
+        const newId = idMapping.sessions.get(exportId)
+        if (newId) {
+          return `{{session:${newId}}}`
+        }
+        // Session wasn't imported - drop the link
+        return match.replace(/\{\{|\}\}/g, '')
+      }).replace(/\{\{(npc|location|item|faction|lore|player|quest|story|session):(entity:\d+)\}\}/g, (match, type, exportId) => {
         const newId = idMapping.entities.get(exportId)
         if (newId) {
           return `{{${type}:${newId}}}`

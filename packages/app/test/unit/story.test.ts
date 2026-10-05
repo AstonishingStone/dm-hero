@@ -153,6 +153,22 @@ describe('links', () => {
     expect(listStoryNodes(db, campaignId)[0]!.session_count).toBe(1)
   })
 
+  it('ignores soft-deleted encounters', () => {
+    const node = createStoryNode(db, { campaignId, name: 'Scene' })
+    const encounter = (name: string) => Number(db.prepare('INSERT INTO encounters (campaign_id, name) VALUES (?, ?)').run(campaignId, name).lastInsertRowid)
+    const alive = encounter('Ambush')
+    const gone = encounter('Old fight')
+    db.prepare('UPDATE encounters SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?').run(gone)
+
+    // Not linkable once deleted...
+    expect(setStoryNodeLinks(db, node.id, { encounterIds: [alive, gone] }).encounters.map(e => e.id)).toEqual([alive])
+
+    // ...and a link made before the deletion disappears from reads and counts
+    db.prepare('UPDATE encounters SET deleted_at = CURRENT_TIMESTAMP WHERE id = ?').run(alive)
+    expect(getStoryNode(db, node.id).encounters).toEqual([])
+    expect(listStoryNodes(db, campaignId)[0]!.encounter_count).toBe(0)
+  })
+
   it('links from the session side', () => {
     const a = createStoryNode(db, { campaignId, name: 'A' })
     const b = createStoryNode(db, { campaignId, name: 'B' })

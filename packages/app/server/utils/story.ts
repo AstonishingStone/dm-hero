@@ -73,7 +73,7 @@ export function listStoryNodes(db: Database.Database, campaignId: number): Story
   const rows = db.prepare(`
     SELECT e.id, e.name, e.parent_entity_id, e.sort_order, e.metadata,
       (SELECT COUNT(*) FROM story_node_sessions s JOIN sessions ss ON ss.id = s.session_id AND ss.deleted_at IS NULL WHERE s.node_id = e.id) AS session_count,
-      (SELECT COUNT(*) FROM story_node_encounters x WHERE x.node_id = e.id) AS encounter_count,
+      (SELECT COUNT(*) FROM story_node_encounters x JOIN encounters ce ON ce.id = x.encounter_id AND ce.deleted_at IS NULL WHERE x.node_id = e.id) AS encounter_count,
       (SELECT COUNT(*) FROM story_node_maps m JOIN campaign_maps cm ON cm.id = m.map_id AND cm.deleted_at IS NULL WHERE m.node_id = e.id) AS map_count
     FROM entities e
     WHERE e.campaign_id = ? AND e.type_id = ? AND e.deleted_at IS NULL
@@ -109,7 +109,7 @@ export function getStoryNode(db: Database.Database, id: number): StoryNode {
   `).all(id) as StoryNodeLinkedSession[]
   const encounters = db.prepare(`
     SELECT x.id, x.name, x.status FROM story_node_encounters l
-    JOIN encounters x ON x.id = l.encounter_id
+    JOIN encounters x ON x.id = l.encounter_id AND x.deleted_at IS NULL
     WHERE l.node_id = ? ORDER BY x.name
   `).all(id) as StoryNodeLinkedEncounter[]
   const maps = db.prepare(`
@@ -289,7 +289,7 @@ export function moveStoryNode(db: Database.Database, id: number, parentId: numbe
 export function setStoryNodeLinks(db: Database.Database, id: number, links: StoryNodeLinks): StoryNode {
   const junctions = [
     { ids: links.sessionIds, table: 'story_node_sessions', column: 'session_id', target: 'sessions', alive: 'AND deleted_at IS NULL' },
-    { ids: links.encounterIds, table: 'story_node_encounters', column: 'encounter_id', target: 'encounters', alive: '' },
+    { ids: links.encounterIds, table: 'story_node_encounters', column: 'encounter_id', target: 'encounters', alive: 'AND deleted_at IS NULL' },
     { ids: links.mapIds, table: 'story_node_maps', column: 'map_id', target: 'campaign_maps', alive: 'AND deleted_at IS NULL' },
   ] as const
 

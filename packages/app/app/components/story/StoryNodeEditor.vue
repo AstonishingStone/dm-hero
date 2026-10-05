@@ -504,12 +504,18 @@ const changedFields = computed(() => {
 })
 const dirty = computed(() => Object.keys(changedFields.value).length > 0)
 
+// Each load gets a number; only the latest one may touch the editor state
+// (switching A -> B -> A quickly must not let a slow response win)
+let loadVersion = 0
 async function load(id: number) {
+  const version = ++loadVersion
   await flush()
+  if (version !== loadVersion) return
   loading.value = true
   editing.value = null
   try {
     const n = await $fetch<StoryNode>(`/api/story/${id}`)
+    if (version !== loadVersion) return
     node.value = n
     saved.value = toForm(n)
     Object.assign(form, toForm(n))
@@ -518,11 +524,12 @@ async function load(id: number) {
     loadAttachments()
   }
   catch (error) {
+    if (version !== loadVersion) return
     console.error('Failed to load story node:', error)
     node.value = null
   }
   finally {
-    loading.value = false
+    if (version === loadVersion) loading.value = false
   }
 }
 

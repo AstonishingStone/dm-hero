@@ -261,6 +261,8 @@ async function submitAdd(name: string) {
   catch (error) {
     console.error('Failed to create story node:', error)
     snackbarStore.error(t('common.error'))
+    // Let the quick-add row know, so it keeps the typed name
+    throw error
   }
 }
 
