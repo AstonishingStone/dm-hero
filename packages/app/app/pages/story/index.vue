@@ -163,6 +163,7 @@ const selectedId = computed(() => {
   return Number.isInteger(id) && id > 0 ? id : null
 })
 
+/** Select a node (saves the open one first); the selection lives in the URL as ?node=id. */
 async function select(id: number) {
   if (id === selectedId.value) return
   await editorRef.value?.flush()
@@ -193,11 +194,12 @@ watch(expanded, (v) => {
 
 const parentIds = computed(() => storyStore.nodes.filter(n => storyStore.nodes.some(c => c.parent_id === n.id)).map(n => n.id))
 const allExpanded = computed(() => parentIds.value.length > 0 && parentIds.value.every(id => expanded.value.has(id)))
+/** Expand every entry with children, or collapse all if they already are. */
 function toggleAll() {
   expanded.value = allExpanded.value ? new Set() : new Set(parentIds.value)
 }
 
-// Make the selected node visible
+/** Expand the ancestors of a node so it is visible in the tree. */
 function expandTo(id: number) {
   let current = storyStore.byId(id)
   while (current?.parent_id) {
@@ -220,6 +222,7 @@ const filteredNodes = computed(() => {
     && (statusFilter.value.length === 0 || statusFilter.value.includes(n.status)),
   )
 })
+/** Ancestor names of a node, "Arc › Chapter", for the filtered result list. */
 function breadcrumb(id: number): string {
   const names: string[] = []
   let current = storyStore.byId(id)
@@ -234,8 +237,10 @@ function breadcrumb(id: number): string {
 const adding = ref<number | null | undefined>(undefined)
 const addText = ref('')
 let lastCreatedId: number | null = null
+/** Default kind of a new entry by depth: arc, chapter, then scenes. */
 const kindForDepth = (depth: number): StoryNodeKind => (['arc', 'chapter'] as const)[depth] ?? 'scene'
 
+/** Open the quick-add row under parentId (null = top level). */
 function startAdd(parentId: number | null) {
   if (parentId) expanded.value.add(parentId)
   addText.value = ''
@@ -243,6 +248,7 @@ function startAdd(parentId: number | null) {
   adding.value = parentId
 }
 
+/** Close the quick-add row and select the last entry created with it. */
 function cancelAdd() {
   adding.value = undefined
   addText.value = ''
@@ -250,6 +256,7 @@ function cancelAdd() {
   lastCreatedId = null
 }
 
+/** Create an entry under the quick-add parent; reports and rethrows a failure. */
 async function submitAdd(name: string) {
   if (!activeCampaignIdNumber.value || adding.value === undefined) return
   const parentId = adding.value
@@ -266,7 +273,7 @@ async function submitAdd(name: string) {
   }
 }
 
-// Tab: nest under the entry above (the last sibling); Shift+Tab: one level up
+/** Tab: nest the quick-add row under the entry above it (the last sibling). */
 function indent() {
   if (adding.value === undefined) return
   const siblings = storyStore.nodes
@@ -278,6 +285,7 @@ function indent() {
   adding.value = target.id
 }
 
+/** Shift+Tab: move the quick-add row one level up. */
 function outdent() {
   if (adding.value === undefined || adding.value === null) return
   adding.value = storyStore.byId(adding.value)?.parent_id ?? null
@@ -294,11 +302,13 @@ const deleteMessage = computed(() => {
   return hasChildren ? t('story.deleteWithChildren', { name: node.name }) : t('story.deleteConfirm', { name: node.name })
 })
 
+/** Ask before deleting a node (and everything below it). */
 function askDelete(id: number) {
   deleteId.value = id
   deleteDialog.value = true
 }
 
+/** Delete the confirmed node; clears the selection if it was deleted too. */
 async function doDelete() {
   if (!deleteId.value) return
   deleting.value = true
@@ -319,6 +329,7 @@ async function doDelete() {
   }
 }
 
+/** Persist a drag & drop move; the store rolls back on failure. */
 async function move(id: number, parentId: number | null, index: number) {
   try {
     await storyStore.moveNode(id, parentId, index)
@@ -333,13 +344,16 @@ async function move(id: number, parentId: number | null, index: number) {
 provide<StoryTreeContext>('storyTree', {
   selectedId,
   select,
+  /** Whether a node's children are shown. */
   isExpanded: id => expanded.value.has(id),
+  /** Show or hide a node's children. */
   toggle: (id) => {
     if (expanded.value.has(id)) expanded.value.delete(id)
     else expanded.value.add(id)
   },
   remove: askDelete,
   move,
+  /** Played/skipped scenes below a node, if it has any. */
   progress: id => storyStore.progress.get(id),
   adding,
   addText,

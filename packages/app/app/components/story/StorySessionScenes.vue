@@ -59,6 +59,7 @@ const loading = ref(false)
 // Tree order with the parent path as subtitle
 const options = computed(() => {
   const byId = new Map(all.value.map(n => [n.id, n]))
+  /** Names of the node's ancestors, "Arc › Chapter". */
   const path = (n: StoryNodeListItem) => {
     const names: string[] = []
     let p = n.parent_id ? byId.get(n.parent_id) : undefined
@@ -69,6 +70,7 @@ const options = computed(() => {
     return names.join(' › ')
   }
   const ordered: Array<StoryNodeListItem & { path: string }> = []
+  /** Append the children of parentId in tree order, depth first. */
   const walk = (parentId: number | null) => {
     for (const n of all.value.filter(x => x.parent_id === parentId).sort((a, b) => a.sort_order - b.sort_order)) {
       ordered.push({ ...n, path: path(n) })
@@ -79,6 +81,7 @@ const options = computed(() => {
   return ordered
 })
 
+/** Load the campaign's story nodes and the ones played in this session. */
 async function load() {
   loading.value = true
   try {
@@ -100,6 +103,7 @@ async function load() {
 // Each save replaces the whole list - run them one after another, so an older
 // request can't finish last and overwrite a newer selection
 let saveQueue: Promise<void> = Promise.resolve()
+/** Queue a replacement of the session's played scenes; resolves when this save is done. */
 function save(nodeIds: number[]) {
   const sessionId = props.sessionId
   saveQueue = saveQueue.then(async () => {

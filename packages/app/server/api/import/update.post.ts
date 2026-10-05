@@ -43,6 +43,7 @@ interface InBody { campaignId?: number, updates?: InUpdate[] }
 
 interface EntityRow { id: number, type: string, name: string, description: string | null, metadata: string | null }
 
+/** Validate and apply (or with ?dryRun preview) edits to existing entities; scenario entries are refused. */
 export default defineEventHandler(async (event) => {
   const db = getDb()
   const dryRun = (() => {

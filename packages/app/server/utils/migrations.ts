@@ -2910,6 +2910,7 @@ export const migrations: Migration[] = [
   {
     version: 67,
     name: 'story_nodes',
+    /** Add the StoryNode type, entities.sort_order and the story node link tables. */
     up: (db) => {
       // The DM's scenario prep: a free tree of arcs/chapters/scenes/notes, stored as
       // entities (images, documents, search, export come for free). Never shared.
@@ -2964,6 +2965,7 @@ export const migrations: Migration[] = [
   {
     version: 68,
     name: 'fix_entities_fts_triggers',
+    /** Replace the entities_fts update/delete triggers with FTS5 "delete" commands and rebuild the index. */
     up: (db) => {
       // entities_fts is an external-content FTS5 table (content='entities'). Its
       // UPDATE/DELETE triggers used plain UPDATE/DELETE on it, which makes FTS5

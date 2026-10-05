@@ -26,6 +26,7 @@ interface SessionRow {
   cover_image_url: string | null
 }
 
+/** Sessions of a campaign with counts (mentions, attendance, story nodes) and cover image. */
 export default defineEventHandler((event) => {
   const db = getDb()
   const query = getQuery(event)

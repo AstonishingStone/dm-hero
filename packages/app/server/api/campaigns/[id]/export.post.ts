@@ -49,6 +49,7 @@ interface FileToInclude {
   archivePath: string
 }
 
+/** Export a campaign (full or selected entities) as a ZIP with manifest.json and its files; ids become portable export ids. */
 export default defineEventHandler(async (event) => {
   const campaignId = Number(getRouterParam(event, 'id'))
 
@@ -187,8 +188,7 @@ export default defineEventHandler(async (event) => {
     sessionIds.forEach((s, i) => sessionExportIdMap.set(s.id, `session:${i + 1}`))
   }
 
-  // Helper to transform entity links in text: {{npc:123}} -> {{npc:entity:1}}, {{session:4}} -> {{session:session:2}}
-  // This ensures links are portable across export/import cycles
+  /** Make links portable: {{npc:123}} -> {{npc:entity:1}}, {{session:4}} -> {{session:session:2}}; unknown targets stay as they are. */
   const transformEntityLinks = (text: string | null | undefined): string | undefined => {
     if (!text) return undefined
 
@@ -206,6 +206,7 @@ export default defineEventHandler(async (event) => {
 
   // Story nodes keep prep texts in metadata - their links need the same treatment
   const storyTypeId = entityTypes.find(t => t.name === 'StoryNode')?.id
+  /** Story nodes keep prep texts in metadata: make their links portable too (other types unchanged). */
   const transformStoryMetadata = (typeId: number, metadata: Record<string, unknown>) => {
     if (typeId !== storyTypeId) return metadata
     const result = { ...metadata }
@@ -1156,7 +1157,7 @@ export default defineEventHandler(async (event) => {
   // BUILD MANIFEST
   // ==========================================================================
 
-  // Story node links (scenario prep) - sessions and maps are only in a full export
+  /** Story node links of one kind whose node and target are both exported, as export ids (sessions and maps: full export only). */
   const storyLinks = (table: 'story_node_sessions' | 'story_node_maps', column: 'session_id' | 'map_id', targetIds: Map<number, string>) =>
     (db.prepare(`SELECT l.node_id, l.${column} AS target_id FROM ${table} l JOIN entities e ON e.id = l.node_id WHERE e.campaign_id = ?`)
       .all(campaignId) as Array<{ node_id: number, target_id: number }>)

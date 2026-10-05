@@ -195,7 +195,7 @@ async function submit(refocus = true): Promise<boolean> {
   return succeeded
 }
 
-// Leaving the field: keep what's typed, then close
+/** Leaving the quick-add field: create what was typed, then close the row (kept open if creating failed). */
 async function onBlur() {
   if (submitting) return
   // The row moved to another branch (indent/outdent) - not a real blur
@@ -207,7 +207,7 @@ async function onBlur() {
   tree.cancelAdd()
 }
 
-// vuedraggable reports "added" on the target list and "moved" within a list
+/** Persist a drag & drop: vuedraggable reports "added" on the target list and "moved" within a list. */
 function onChange(event: {
   added?: { element: StoryTreeNode, newIndex: number }
   moved?: { element: StoryTreeNode, newIndex: number }

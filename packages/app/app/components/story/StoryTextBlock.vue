@@ -105,7 +105,9 @@ const props = withDefaults(defineProps<{
   placeholder: '',
   variant: 'plain',
   height: '260px',
+  /** No names known: badges show "type #id". */
   names: () => ({}),
+  /** No sessions for the editor's session-link button. */
   sessions: () => [],
 })
 
@@ -121,6 +123,7 @@ const { locale } = useI18n()
 
 // Opening a block puts the cursor at the end of its text, ready to type
 const editorComp = ref<{ editorRef?: { focus?: (o?: 'start' | 'end') => void } } | null>(null)
+/** Put the cursor at the end of the text once the editor is shown. */
 function focusEditor() {
   if (!props.editing) return
   const md = editorComp.value?.editorRef
@@ -156,8 +159,10 @@ const BADGE_ICONS: Record<string, string> = {
 // The preview only re-renders on text changes - names arriving later need a fresh render
 const namesKey = computed(() => Object.entries(props.names).map(([k, v]) => `${k}=${v}`).join('|'))
 
+/** Escape text for use inside HTML (entity names in badges). */
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;' })[c]!)
 
+/** HTML of a clickable entity badge for {{type:id}}, named from `names`. */
 function badge(type: string, id: string) {
   const name = props.names[`${type}:${id}`]
   const color = BADGE_COLORS[type] ?? '#888888'
@@ -165,7 +170,7 @@ function badge(type: string, id: string) {
   return `<span class="entity-badge" data-type="${type}" data-id="${id}" style="background-color: ${color}; color: white; padding: 1px 8px; border-radius: 12px; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;"><i class="mdi ${icon}"></i>${escapeHtml(name ?? `${type} #${id}`)}</span>`
 }
 
-// {{type:id}} (and legacy [Name](type:id)) -> badge; keep heading ids valid
+/** {{type:id}} (and legacy [Name](type:id)) -> badge; keeps heading ids valid. */
 function renderBadges(html: string): string {
   return html
     .replace(/(<h[1-6][^>]*id=")([^"]*)(">)/g, (_m, pre, id, post) => pre + id.replace(/\{\{\w+:\d+\}\}/g, '') + post)
@@ -173,6 +178,7 @@ function renderBadges(html: string): string {
     .replace(/<a[^>]*href="(\w+):(\d+)"[^>]*>[^<]+<\/a>/g, (_m, type, id) => badge(type, id))
 }
 
+/** Click on the rendered text: a badge opens its preview, links and text selections are left alone, anything else starts editing. */
 function onClick(event: MouseEvent) {
   const target = event.target as HTMLElement
   const el = target.closest('.entity-badge')

@@ -729,8 +729,9 @@ const storyOutlineInput = {
 interface StoryListItem { id: number, name: string, parent_id: number | null, sort_order: number, kind: string, status: string, session_count: number, encounter_count: number, map_count: number }
 interface StoryTreeItem { id: number, name: string, kind: string, status: string, played_in_sessions?: number, children?: StoryTreeItem[] }
 
-// Flat list -> nested outline, in display order
+/** Flat list -> nested outline, in display order. */
 function storyTree(list: StoryListItem[]): StoryTreeItem[] {
+  /** Children of parentId, each with its own children. */
   const build = (parentId: number | null): StoryTreeItem[] => list
     .filter(n => n.parent_id === parentId)
     .sort((a, b) => a.sort_order - b.sort_order || a.id - b.id)
@@ -748,6 +749,7 @@ function storyTree(list: StoryListItem[]): StoryTreeItem[] {
   return build(null)
 }
 
+/** The campaign's story nodes, or the failed API result. */
 async function fetchStory(campaignId: number): Promise<StoryListItem[] | ApiResult> {
   const r = await callApi(`/api/story?campaignId=${campaignId}`)
   if (!r.ok || !Array.isArray(r.body)) return r
@@ -872,6 +874,7 @@ server.registerTool('delete_story_node', {
   const node = list.find(n => n.id === nodeId)
   if (!node) return asText({ ok: false, error: `Scenario entry ${nodeId} not found in campaign ${campaignId}` })
   if (!confirm) {
+    /** All descendants of a node. */
     const below = (id: number): StoryListItem[] => list.filter(n => n.parent_id === id).flatMap(n => [n, ...below(n.id)])
     const descendants = below(nodeId)
     return asText({

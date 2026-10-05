@@ -29,15 +29,18 @@ beforeEach(() => {
   otherCampaignId = Number(db.prepare('INSERT INTO campaigns (name) VALUES (?)').run('Other').lastInsertRowid)
 })
 
+/** Create an NPC; returns its id. */
 function npc(name: string, campaign = campaignId): number {
   const typeId = (db.prepare('SELECT id FROM entity_types WHERE name = ?').get('NPC') as { id: number }).id
   return Number(db.prepare('INSERT INTO entities (type_id, campaign_id, name) VALUES (?, ?, ?)').run(typeId, campaign, name).lastInsertRowid)
 }
 
+/** Create a session; returns its id. */
 function session(title: string, campaign = campaignId): number {
   return Number(db.prepare('INSERT INTO sessions (campaign_id, title) VALUES (?, ?)').run(campaign, title).lastInsertRowid)
 }
 
+/** Names of the children of parentId in order. */
 const order = (parentId: number | null) =>
   listStoryNodes(db, campaignId).filter(n => n.parent_id === parentId).map(n => n.name)
 
@@ -155,6 +158,7 @@ describe('links', () => {
 
   it('ignores soft-deleted encounters', () => {
     const node = createStoryNode(db, { campaignId, name: 'Scene' })
+    /** Create an encounter; returns its id. */
     const encounter = (name: string) => Number(db.prepare('INSERT INTO encounters (campaign_id, name) VALUES (?, ?)').run(campaignId, name).lastInsertRowid)
     const alive = encounter('Ambush')
     const gone = encounter('Old fight')
@@ -193,6 +197,7 @@ describe('session mention type check', () => {
 })
 
 describe('createStoryOutline', () => {
+  /** A small adventure: arc > chapter > a scene with texts and a note. */
   const outline = () => [{
     name: 'The Haunted House',
     children: [{

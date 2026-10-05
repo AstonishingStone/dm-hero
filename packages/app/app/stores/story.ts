@@ -7,6 +7,7 @@ export interface StoryTreeNode extends StoryNodeListItem {
 
 // The campaign manager's tree (GM-only scenario prep)
 export const useStoryStore = defineStore('story', {
+  /** Flat node list of the loaded campaign. */
   state: () => ({
     nodes: [] as StoryNodeListItem[],
     loading: false,
@@ -14,7 +15,7 @@ export const useStoryStore = defineStore('story', {
   }),
 
   getters: {
-    // Nested tree built from the flat list (ordered by sort_order)
+    /** Nested tree built from the flat list (ordered by sort_order). */
     tree: (state): StoryTreeNode[] => {
       const byId = new Map<number, StoryTreeNode>()
       for (const n of state.nodes) byId.set(n.id, { ...n, children: [] })
@@ -26,11 +27,13 @@ export const useStoryStore = defineStore('story', {
       }
       return roots
     },
+    /** Look up a node by id. */
     byId: state => (id: number) => state.nodes.find(n => n.id === id),
 
-    // Reading order (depth-first, like the tree shows it) - for previous/next
+    /** Reading order (depth-first, like the tree shows it) - for previous/next. */
     ordered(): StoryNodeListItem[] {
       const result: StoryNodeListItem[] = []
+      /** Append nodes and their descendants in order. */
       const walk = (nodes: StoryTreeNode[]) => {
         for (const n of nodes) {
           result.push(n)
@@ -41,7 +44,7 @@ export const useStoryStore = defineStore('story', {
       return result
     },
 
-    // Root first, without the node itself
+    /** Ancestors of a node, root first, without the node itself. */
     ancestors: state => (id: number): StoryNodeListItem[] => {
       const chain: StoryNodeListItem[] = []
       let current = state.nodes.find(n => n.id === id)
@@ -52,9 +55,10 @@ export const useStoryStore = defineStore('story', {
       return chain
     },
 
-    // Per node with scenes below it: how many of them are done (played or skipped)
+    /** Per node with scenes below it: how many of them are done (played or skipped). */
     progress(): Map<number, { done: number, total: number }> {
       const result = new Map<number, { done: number, total: number }>()
+      /** Count the scenes below a node, recording every node that has some. */
       const count = (node: StoryTreeNode): { done: number, total: number } => {
         const sum = { done: 0, total: 0 }
         for (const child of node.children) {
@@ -75,6 +79,7 @@ export const useStoryStore = defineStore('story', {
   },
 
   actions: {
+    /** Load the tree of a campaign. */
     async fetchNodes(campaignId: number) {
       this.loading = true
       try {
@@ -90,10 +95,12 @@ export const useStoryStore = defineStore('story', {
       }
     },
 
+    /** Reload the tree of the last loaded campaign. */
     async refresh() {
       if (this.lastFetchedCampaignId) await this.fetchNodes(this.lastFetchedCampaignId)
     },
 
+    /** Create a node (appended to its siblings) and reload the tree. */
     async createNode(campaignId: number, name: string, kind: StoryNodeKind, parentId: number | null) {
       const node = await $fetch<StoryNode>('/api/story', {
         method: 'POST',
@@ -103,24 +110,28 @@ export const useStoryStore = defineStore('story', {
       return node
     },
 
+    /** Patch a node and update its tree entry. */
     async updateNode(id: number, patch: Record<string, unknown>) {
       const node = await $fetch<StoryNode>(`/api/story/${id}`, { method: 'PATCH', body: patch })
       this.applyNode(node)
       return node
     },
 
+    /** Replace a node's session / encounter / map links. */
     async setLinks(id: number, links: StoryNodeLinks) {
       const node = await $fetch<StoryNode>(`/api/story/${id}/links`, { method: 'PUT', body: links })
       this.applyNode(node)
       return node
     },
 
+    /** Delete a node with its subtree; returns the deleted ids. */
     async deleteNode(id: number) {
       const { deletedIds } = await $fetch<{ deletedIds: number[] }>(`/api/story/${id}`, { method: 'DELETE' })
       this.nodes = this.nodes.filter(n => !deletedIds.includes(n.id))
       return deletedIds
     },
 
+    /** Move a node under parentId at index; reloads on failure to drop the optimistic drag. */
     async moveNode(id: number, parentId: number | null, index: number) {
       try {
         this.nodes = await $fetch<StoryNodeListItem[]>('/api/story/move', {
@@ -135,7 +146,7 @@ export const useStoryStore = defineStore('story', {
       }
     },
 
-    // Keep the list entry in sync after editing a node
+    /** Keep the list entry in sync after editing a node. */
     applyNode(node: StoryNode) {
       const item = this.nodes.find(n => n.id === node.id)
       if (!item) return

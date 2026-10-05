@@ -27,6 +27,7 @@ export class StoryError extends Error {
   }
 }
 
+/** Id of the StoryNode entity type. */
 export function getStoryTypeId(db: Database.Database): number {
   const row = db.prepare('SELECT id FROM entity_types WHERE name = ?').get('StoryNode') as { id: number } | undefined
   if (!row) throw new StoryError(500, 'StoryNode entity type not found')
@@ -45,6 +46,7 @@ interface NodeRow {
   updated_at: string
 }
 
+/** Parse stored metadata, with defaults for kind/status (bad JSON counts as empty). */
 function parseMetadata(raw: string | null) {
   try {
     return normalizeStoryMetadata(raw ? JSON.parse(raw) : null)
@@ -54,6 +56,7 @@ function parseMetadata(raw: string | null) {
   }
 }
 
+/** A live story node row; 404 if it does not exist or is deleted. */
 function getNodeRow(db: Database.Database, id: number): NodeRow {
   const row = db.prepare(`
     SELECT id, campaign_id, name, description, parent_entity_id, sort_order, metadata, created_at, updated_at
@@ -100,6 +103,7 @@ export function listStoryNodes(db: Database.Database, campaignId: number): Story
   })
 }
 
+/** A node with its texts, linked sessions/encounters/maps (deleted ones left out) and mentions. */
 export function getStoryNode(db: Database.Database, id: number): StoryNode {
   const row = getNodeRow(db, id)
   const sessions = db.prepare(`
@@ -139,12 +143,14 @@ export function getStoryNode(db: Database.Database, id: number): StoryNode {
   }
 }
 
+/** Check that a parent exists and belongs to the same campaign (null = top level). */
 function assertParent(db: Database.Database, campaignId: number, parentId: number | null) {
   if (parentId === null) return
   const parent = getNodeRow(db, parentId)
   if (parent.campaign_id !== campaignId) throw new StoryError(400, 'Parent belongs to another campaign')
 }
 
+/** Sort order that appends a node after its last sibling. */
 function nextSortOrder(db: Database.Database, campaignId: number, parentId: number | null): number {
   const row = db.prepare(`
     SELECT COALESCE(MAX(sort_order), -1) + 1 AS next FROM entities
@@ -153,6 +159,7 @@ function nextSortOrder(db: Database.Database, campaignId: number, parentId: numb
   return row.next
 }
 
+/** Create a node (kind defaults to scene, status to idea) as the last child of parentId. */
 export function createStoryNode(
   db: Database.Database,
   input: { campaignId: number, name: string, kind?: StoryNodeKind, parentId?: number | null },
@@ -362,7 +369,7 @@ export interface StoryOutlineResult {
 export const MAX_OUTLINE_NODES = 500
 export const MAX_OUTLINE_DEPTH = 8
 
-// Without an explicit kind: arc, chapter, then scenes - counted from the top of the tree
+/** Without an explicit kind: arc, chapter, then scenes - counted from the top of the tree. */
 const kindForDepth = (depth: number): StoryNodeKind => (['arc', 'chapter'] as const)[depth] ?? 'scene'
 
 /**
@@ -381,6 +388,7 @@ export function createStoryOutline(
   // Validate everything up front so nothing is half-created
   const errors: string[] = []
   let count = 0
+  /** Collect validation errors of a level and its children. */
   const check = (nodes: unknown, path: string, depth: number) => {
     if (!Array.isArray(nodes)) {
       errors.push(`${path}: children must be an array`)
@@ -404,10 +412,12 @@ export function createStoryOutline(
   if (count > MAX_OUTLINE_NODES) errors.push(`too many entries (${count}, max ${MAX_OUTLINE_NODES} per call)`)
   if (errors.length) throw new StoryError(400, `Invalid outline: ${errors.slice(0, 20).join('; ')}`)
 
+  /** Create (or in a dry run only resolve) the whole outline. */
   const run = () => {
     assertParent(db, campaignId, parentId)
     const startDepth = parentId === null ? 0 : ancestorCount(db, parentId) + 1
     let created = 0
+    /** Create one level and recurse into its children. */
     const build = (nodes: StoryOutlineInput[], parent: number | null, depth: number): StoryOutlineResult[] =>
       nodes.map((n) => {
         const kind = n.kind ?? kindForDepth(depth)
@@ -429,6 +439,7 @@ export function createStoryOutline(
   return dryRun ? run() : db.transaction(run)()
 }
 
+/** Number of ancestors of a node (its depth, 0 at the top). */
 function ancestorCount(db: Database.Database, id: number): number {
   const row = db.prepare(`
     WITH RECURSIVE up(id, parent, depth) AS (

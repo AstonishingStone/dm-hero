@@ -252,6 +252,7 @@ async function extractFileFromMultipart(rawFilePath: string, boundary: string, t
   return { zipPath, options }
 }
 
+/** Import a campaign ZIP as a new campaign or merged into one, remapping export ids to new ids. */
 export default defineEventHandler(async (event) => {
   console.log('[Import] Starting import request...')
 
@@ -1716,7 +1717,7 @@ export default defineEventHandler(async (event) => {
     // POST-PROCESSING: Transform entity links to new IDs
     // ==========================================================================
 
-    // Helper to transform entity links: {{npc:entity:1}} -> {{npc:567}}, {{session:session:2}} -> {{session:89}}
+    /** Remap portable links to new ids: {{npc:entity:1}} -> {{npc:567}}, {{session:session:2}} -> {{session:89}}; links to things not imported become plain text. */
     const transformEntityLinks = (text: string | null): string | null => {
       if (!text) return null
 
@@ -1772,7 +1773,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Story node links to sessions and maps
+    /** Insert statement for story node links to sessions or maps. */
     const insertStoryLink = (table: 'story_node_sessions' | 'story_node_maps', column: 'session_id' | 'map_id') =>
       db.prepare(`INSERT OR IGNORE INTO ${table} (node_id, ${column}) VALUES (?, ?)`)
     if (manifest.storyNodeSessions?.length) {

@@ -113,6 +113,7 @@ const newUrl = ref('')
 const urlError = computed(() => (newUrl.value && !isValidMusicUrl(newUrl.value.trim()) ? $t('sessions.music.invalidUrl') : ''))
 const canAdd = computed(() => !!newLabel.value.trim() && isValidMusicUrl(newUrl.value.trim()))
 
+/** Load the playlist: from the session when there is one, otherwise from v-model. */
 async function load() {
   if (!props.sessionId) {
     links.value = props.modelValue ?? []
@@ -130,6 +131,7 @@ async function load() {
   }
 }
 
+/** Store a new playlist: PUT to the session, or emit it through v-model when there is no session. */
 async function save(next: SessionMusicLink[]) {
   if (!props.sessionId) {
     links.value = next

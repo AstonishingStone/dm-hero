@@ -439,6 +439,7 @@ const previewImage = ref<string | null>(null)
 type Form = { name: string, description: string, kind: StoryNodeKind, status: StoryNodeStatus, musicLinks: SessionMusicLink[] }
   & Record<StoryNodeTextField, string>
 
+/** A blank editor form (defaults of a new scene). */
 const emptyForm = (): Form => ({
   name: '',
   description: '',
@@ -479,6 +480,7 @@ const names = computed(() => {
 const visibleBlocks = computed(() => BLOCKS.filter(b => b.field === 'description' || form[b.field].trim() || editing.value === b.field))
 const hiddenBlocks = computed(() => BLOCKS.filter(b => !visibleBlocks.value.includes(b)))
 
+/** Editor form values from a loaded node, with defaults for missing metadata. */
 function toForm(n: StoryNode): Form {
   return {
     name: n.name,
@@ -507,6 +509,7 @@ const dirty = computed(() => Object.keys(changedFields.value).length > 0)
 // Each load gets a number; only the latest one may touch the editor state
 // (switching A -> B -> A quickly must not let a slow response win)
 let loadVersion = 0
+/** Load a node into the editor after saving pending changes of the current one; stale responses are ignored. */
 async function load(id: number) {
   const version = ++loadVersion
   await flush()
@@ -533,6 +536,7 @@ async function load(id: number) {
   }
 }
 
+/** Load the node's images and documents for the attachments row (dropped if the node changed meanwhile). */
 async function loadAttachments() {
   if (!node.value) return
   const id = node.value.id
@@ -545,6 +549,7 @@ async function loadAttachments() {
   documents.value = docs
 }
 
+/** Load the campaign's sessions (newest first), encounters and maps for the link pickers. */
 async function loadOptions() {
   const [s, e, m] = await Promise.all([
     $fetch<SessionOption[]>('/api/sessions', { query: { campaignId: props.campaignId } }).catch(() => []),
@@ -557,15 +562,18 @@ async function loadOptions() {
   maps.value = m
 }
 
+/** Display label of a session: "#3 Title", or just the title without a number. */
 function sessionLabel(s: { title: string, session_number: number | null }) {
   return s.session_number ? `#${s.session_number} ${s.title}` : s.title
 }
 
+/** Leave edit mode of a text block and save right away. */
 function doneEditing() {
   editing.value = null
   flush()
 }
 
+/** Close the music/image/document dialog and refresh the attachments row. */
 function closeManager() {
   dialog.value = null
   loadAttachments()
@@ -579,6 +587,7 @@ watch(form, () => {
   timer = setTimeout(() => save(), 800)
 }, { deep: true })
 
+/** Save the changed fields of the form (autosave target); skipped when nothing changed or the name is empty. */
 async function save() {
   if (timer) {
     clearTimeout(timer)
@@ -605,11 +614,12 @@ async function save() {
   }
 }
 
-// Save pending changes right away (switching nodes, leaving the page)
+/** Save pending changes right away (switching nodes, leaving the page). */
 async function flush() {
   if (timer || (node.value && dirty.value)) await save()
 }
 
+/** Replace the given link lists (sessions / encounters / maps) and show the result. */
 async function saveLinks(links: StoryNodeLinks) {
   if (!node.value) return
   try {
@@ -622,6 +632,7 @@ async function saveLinks(links: StoryNodeLinks) {
   }
 }
 
+/** Upload images pasted or dropped into a text block and hand their URLs back to the editor. */
 async function handleImageUpload(files: File[], callback: (urls: string[]) => void) {
   const uploaded: string[] = []
   for (const file of files) {
@@ -642,6 +653,7 @@ async function handleImageUpload(files: File[], callback: (urls: string[]) => vo
 const showPreview = ref(false)
 const previewType = ref<EntityPreviewType>('npc')
 const previewId = ref<number | null>(null)
+/** Open the preview dialog of a mentioned entity (sessions and unknown types have none). */
 function previewEntity(type: string, id: number) {
   if (!(type in MENTION_ICONS)) return
   previewType.value = type as EntityPreviewType

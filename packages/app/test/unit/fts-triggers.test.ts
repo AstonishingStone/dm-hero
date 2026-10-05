@@ -15,6 +15,7 @@ import { setVersion } from '../../server/utils/db'
 const dir = mkdtempSync(join(tmpdir(), 'dmhero-fts-'))
 afterAll(() => rmSync(dir, { recursive: true, force: true }))
 
+/** A migrated database in a temp file with WAL, like the app uses. */
 function fileDb(): Database.Database {
   const db = new Database(join(dir, `${Math.random().toString(36).slice(2)}.db`))
   db.pragma('journal_mode = WAL')
@@ -26,6 +27,7 @@ function fileDb(): Database.Database {
   return db
 }
 
+/** Ids of the entities the full-text index finds for q. */
 const search = (db: Database.Database, q: string) =>
   (db.prepare('SELECT rowid FROM entities_fts WHERE entities_fts MATCH ?').all(q) as Array<{ rowid: number }>).map(r => r.rowid)
 
