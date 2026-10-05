@@ -59,11 +59,13 @@ const loading = ref(false)
 // Tree order with the parent path as subtitle
 const options = computed(() => {
   const byId = new Map(all.value.map(n => [n.id, n]))
-  /** Names of the node's ancestors, "Arc › Chapter". */
+  /** Names of the node's ancestors, "Arc › Chapter" (stops on a parent cycle). */
   const path = (n: StoryNodeListItem) => {
     const names: string[] = []
+    const seen = new Set<number>([n.id])
     let p = n.parent_id ? byId.get(n.parent_id) : undefined
-    while (p) {
+    while (p && !seen.has(p.id)) {
+      seen.add(p.id)
       names.unshift(p.name)
       p = p.parent_id ? byId.get(p.parent_id) : undefined
     }

@@ -201,11 +201,7 @@ function toggleAll() {
 
 /** Expand the ancestors of a node so it is visible in the tree. */
 function expandTo(id: number) {
-  let current = storyStore.byId(id)
-  while (current?.parent_id) {
-    expanded.value.add(current.parent_id)
-    current = storyStore.byId(current.parent_id)
-  }
+  for (const a of storyStore.ancestors(id)) expanded.value.add(a.id)
 }
 watch([selectedId, () => storyStore.nodes.length], ([id]) => {
   if (id) expandTo(id)
@@ -224,13 +220,7 @@ const filteredNodes = computed(() => {
 })
 /** Ancestor names of a node, "Arc › Chapter", for the filtered result list. */
 function breadcrumb(id: number): string {
-  const names: string[] = []
-  let current = storyStore.byId(id)
-  while (current?.parent_id) {
-    current = storyStore.byId(current.parent_id)
-    if (current) names.unshift(current.name)
-  }
-  return names.join(' › ')
+  return storyStore.ancestors(id).map(a => a.name).join(' › ')
 }
 
 // Quick add (outliner): the kind follows the depth, changeable later

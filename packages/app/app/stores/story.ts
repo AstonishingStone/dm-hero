@@ -44,11 +44,13 @@ export const useStoryStore = defineStore('story', {
       return result
     },
 
-    /** Ancestors of a node, root first, without the node itself. */
+    /** Ancestors of a node, root first, without the node itself (stops on a parent cycle). */
     ancestors: state => (id: number): StoryNodeListItem[] => {
       const chain: StoryNodeListItem[] = []
+      const seen = new Set<number>([id])
       let current = state.nodes.find(n => n.id === id)
-      while (current?.parent_id) {
+      while (current?.parent_id && !seen.has(current.parent_id)) {
+        seen.add(current.parent_id)
         current = state.nodes.find(n => n.id === current!.parent_id)
         if (current) chain.unshift(current)
       }

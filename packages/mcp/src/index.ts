@@ -874,8 +874,13 @@ server.registerTool('delete_story_node', {
   const node = list.find(n => n.id === nodeId)
   if (!node) return asText({ ok: false, error: `Scenario entry ${nodeId} not found in campaign ${campaignId}` })
   if (!confirm) {
-    /** All descendants of a node. */
-    const below = (id: number): StoryListItem[] => list.filter(n => n.parent_id === id).flatMap(n => [n, ...below(n.id)])
+    /** All story descendants of a node - the same set the deletion removes (visits each node once). */
+    const below = (id: number, seen = new Set<number>([id])): StoryListItem[] => list
+      .filter(n => n.parent_id === id && !seen.has(n.id))
+      .flatMap((n) => {
+        seen.add(n.id)
+        return [n, ...below(n.id, seen)]
+      })
     const descendants = below(nodeId)
     return asText({
       preview: { id: node.id, name: node.name, kind: node.kind, alsoDeleted: descendants.map(n => ({ id: n.id, name: n.name, kind: n.kind })) },

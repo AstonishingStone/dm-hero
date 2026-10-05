@@ -231,7 +231,11 @@ export function updateStoryNode(db: Database.Database, id: number, patch: StoryN
   return getStoryNode(db, id)
 }
 
-/** The node and all its descendants (ids) */
+/**
+ * The node and all story nodes below it (ids). Only live story nodes of the node's
+ * campaign count: anything else hanging under it (e.g. from a bad import) is never
+ * part of a story subtree. UNION de-duplicates, so a cyclic parent chain still ends.
+ */
 function subtreeIds(db: Database.Database, id: number): number[] {
   return (db.prepare(`
     WITH RECURSIVE tree(id) AS (
@@ -239,9 +243,11 @@ function subtreeIds(db: Database.Database, id: number): number[] {
       UNION
       SELECT e.id FROM entities e JOIN tree t ON e.parent_entity_id = t.id
       WHERE e.deleted_at IS NULL
+        AND e.type_id = ?
+        AND e.campaign_id = (SELECT campaign_id FROM entities WHERE id = ?)
     )
     SELECT id FROM tree
-  `).all(id) as Array<{ id: number }>).map(r => r.id)
+  `).all(id, getStoryTypeId(db), id) as Array<{ id: number }>).map(r => r.id)
 }
 
 /** Soft-delete a node with everything below it; returns the deleted ids */
@@ -439,17 +445,65 @@ export function createStoryOutline(
   return dryRun ? run() : db.transaction(run)()
 }
 
-/** Number of ancestors of a node (its depth, 0 at the top). */
+/**
+ * Number of ancestors of a node (its depth, 0 at the top). Counts distinct ancestor
+ * ids - UNION drops repeats, so this ends even on a cyclic parent chain.
+ */
 function ancestorCount(db: Database.Database, id: number): number {
   const row = db.prepare(`
-    WITH RECURSIVE up(id, parent, depth) AS (
-      SELECT id, parent_entity_id, 0 FROM entities WHERE id = ?
-      UNION ALL
-      SELECT e.id, e.parent_entity_id, up.depth + 1 FROM entities e JOIN up ON e.id = up.parent
+    WITH RECURSIVE up(id) AS (
+      SELECT parent_entity_id FROM entities WHERE id = ?
+      UNION
+      SELECT e.parent_entity_id FROM entities e JOIN up ON e.id = up.id
+      WHERE e.parent_entity_id IS NOT NULL
     )
-    SELECT MAX(depth) AS depth FROM up
-  `).get(id) as { depth: number | null }
-  return row.depth ?? 0
+    SELECT COUNT(*) AS depth FROM up WHERE id IS NOT NULL AND id != ?
+  `).get(id, id) as { depth: number }
+  return row.depth
+}
+
+/**
+ * Make a campaign's story tree valid again after data came in from outside (import):
+ * a node whose parent isn't a live story node of the same campaign, or that sits in
+ * a parent cycle, is moved to the top level. Returns the ids of the nodes it moved.
+ */
+export function repairStoryTree(db: Database.Database, campaignId: number): number[] {
+  const typeId = getStoryTypeId(db)
+  const nodes = db.prepare(`
+    SELECT id, parent_entity_id AS parent FROM entities
+    WHERE campaign_id = ? AND type_id = ? AND deleted_at IS NULL
+  `).all(campaignId, typeId) as Array<{ id: number, parent: number | null }>
+  const parentOf = new Map(nodes.map(n => [n.id, n.parent]))
+  const moved: number[] = []
+  /** Move a node to the top level (in the working copy) and remember it. */
+  const detach = (id: number) => {
+    parentOf.set(id, null)
+    moved.push(id)
+  }
+
+  // Parents outside the story tree of this campaign
+  for (const n of nodes) {
+    if (n.parent !== null && !parentOf.has(n.parent)) detach(n.id)
+  }
+  // Cycles: walk up from each node; the first node seen twice closes a loop - cut it there
+  for (const n of nodes) {
+    const seen = new Set<number>()
+    let current: number | null = n.id
+    while (current !== null) {
+      if (seen.has(current)) {
+        detach(current)
+        break
+      }
+      seen.add(current)
+      current = parentOf.get(current) ?? null
+    }
+  }
+
+  if (moved.length) {
+    const update = db.prepare('UPDATE entities SET parent_entity_id = NULL WHERE id = ?')
+    db.transaction(() => moved.forEach(id => update.run(id)))()
+  }
+  return moved
 }
 
 /** Turn a StoryError into an HTTP error, rethrow anything else */

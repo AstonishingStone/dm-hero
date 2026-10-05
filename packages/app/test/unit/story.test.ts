@@ -8,6 +8,7 @@ import {
   getStoryNode,
   listStoryNodes,
   moveStoryNode,
+  repairStoryTree,
   setSessionStoryNodes,
   setStoryNodeLinks,
   storyNodesBySession,
@@ -245,5 +246,56 @@ describe('createStoryOutline', () => {
     expect(result.outline[0]!.kind).toBe('chapter')
     expect(result.outline[0]!.children[0]!.kind).toBe('scene')
     expect(order(arc.id)).toEqual(['Chapter'])
+  })
+})
+
+describe('malformed trees (e.g. from an import)', () => {
+  /** Point a node's parent straight at another entity, bypassing the story checks. */
+  const setParent = (id: number, parentId: number | null) =>
+    db.prepare('UPDATE entities SET parent_entity_id = ? WHERE id = ?').run(parentId, id)
+
+  it('deleting a story node leaves non-story entities below it alone', () => {
+    const scene = createStoryNode(db, { campaignId, name: 'Scene' })
+    const child = createStoryNode(db, { campaignId, name: 'Child', parentId: scene.id })
+    const villain = npc('Villain')
+    setParent(villain, child.id)
+
+    expect(deleteStoryNode(db, scene.id).sort()).toEqual([scene.id, child.id].sort())
+    expect(db.prepare('SELECT deleted_at FROM entities WHERE id = ?').get(villain)).toEqual({ deleted_at: null })
+  })
+
+  it('a parent cycle does not hang depth lookups', () => {
+    const a = createStoryNode(db, { campaignId, name: 'A' })
+    const b = createStoryNode(db, { campaignId, name: 'B', parentId: a.id })
+    setParent(a.id, b.id) // A -> B -> A
+
+    const result = createStoryOutline(db, { campaignId, parentId: b.id, nodes: [{ name: 'Inside' }] })
+    expect(result.created).toBe(1)
+    expect(() => moveStoryNode(db, a.id, b.id, 0)).toThrow(StoryError)
+  })
+
+  it('repairStoryTree cuts cycles and drops foreign parents, keeps valid ones', () => {
+    const ok = createStoryNode(db, { campaignId, name: 'Arc' })
+    createStoryNode(db, { campaignId, name: 'Chapter', parentId: ok.id })
+    const self = createStoryNode(db, { campaignId, name: 'Self' })
+    setParent(self.id, self.id)
+    const x = createStoryNode(db, { campaignId, name: 'X' })
+    const y = createStoryNode(db, { campaignId, name: 'Y', parentId: x.id })
+    setParent(x.id, y.id) // X <-> Y
+    const underNpc = createStoryNode(db, { campaignId, name: 'Under NPC' })
+    setParent(underNpc.id, npc('Elra'))
+    const foreignArc = createStoryNode(db, { campaignId: otherCampaignId, name: 'Foreign' })
+    const underForeign = createStoryNode(db, { campaignId, name: 'Under foreign' })
+    setParent(underForeign.id, foreignArc.id)
+
+    const moved = repairStoryTree(db, campaignId)
+    expect(moved).toHaveLength(4) // self, one of X/Y, underNpc, underForeign
+    expect(moved).toEqual(expect.arrayContaining([self.id, underNpc.id, underForeign.id]))
+
+    const byName = new Map(listStoryNodes(db, campaignId).map(n => [n.name, n.parent_id]))
+    expect(byName.get('Chapter')).toBe(ok.id)
+    expect(byName.get('Self')).toBeNull()
+    expect([byName.get('X'), byName.get('Y')].filter(p => p === null)).toHaveLength(1)
+    expect(repairStoryTree(db, campaignId)).toEqual([]) // nothing left to fix
   })
 })

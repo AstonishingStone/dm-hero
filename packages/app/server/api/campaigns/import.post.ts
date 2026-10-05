@@ -39,6 +39,7 @@ import { isExportCompatible, isExportFromNewerVersion } from '~~/types/export'
 import pkg from '~~/package.json'
 import { sanitizeMusicLinks } from '~~/server/utils/music-links'
 import { syncStoryNodeMentions } from '~~/server/utils/extract-mentions'
+import { repairStoryTree } from '~~/server/utils/story'
 import { STORY_NODE_TEXT_FIELDS } from '~~/types/story'
 
 // Dynamic import for unzipper (ESM)
@@ -827,6 +828,15 @@ export default defineEventHandler(async (event) => {
         if (locationId || parentId) {
           updateRefs.run(locationId || null, parentId || null, newId)
         }
+      }
+
+      // Scenario entries: parents from the archive must form a valid story tree
+      // (no cycles, only story nodes of this campaign) - otherwise to the top level
+      const repaired = repairStoryTree(db, campaignId)
+      if (repaired.length) {
+        stats.warnings.push(repaired.length === 1
+          ? '1 scenario entry had an invalid parent and was moved to the top level'
+          : `${repaired.length} scenario entries had an invalid parent and were moved to the top level`)
       }
 
       // Third pass: tags (silently reuse existing names by id, create missing).
