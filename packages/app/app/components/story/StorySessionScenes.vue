@@ -43,7 +43,8 @@
 </template>
 
 <script setup lang="ts">
-import { STORY_NODE_KIND_ICONS, STORY_NODE_STATUS_COLORS, type StoryNodeListItem } from '~~/types/story'
+import { defineEmits, defineProps, } from 'vue';
+import { STORY_NODE_KIND_ICONS, STORY_NODE_STATUS_COLORS, type StoryNodeListItem } from '~~/types/story';
 
 // The session side of "played in": which prepared scenes happened in this session
 const props = defineProps<{ sessionId: number, campaignId: number }>()
@@ -123,6 +124,7 @@ function save(nodeIds: number[]) {
     catch (error) {
       console.error('Failed to save session scenes:', error)
       snackbarStore.error(t('common.error'))
+      if (sessionId === props.sessionId) linked.value = [...linked.value]
     }
   })
   return saveQueue
