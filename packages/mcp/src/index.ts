@@ -847,48 +847,32 @@ server.registerTool('move_story_node', {
 })
 
 server.registerTool('link_story_node', {
-  description: 'Link a scenario entry to the sessions it was played in, and to encounters and maps it uses. Each list you pass REPLACES that kind of link ([] removes all); lists you leave out stay as they are. Ids via list_sessions / list_encounters / list_maps. Tip: after a session, link the played scenes and set their status to played (update_story_node).',
+  description: 'Link a scenario entry to the sessions it was played in, and to encounters and maps it uses. The ids you pass are ADDED to the existing links (nothing is unlinked – removing a link is only possible in the app). Ids via list_sessions / list_encounters / list_maps. Tip: after a session, link the played scenes and set their status to played (update_story_node).',
   inputSchema: {
     nodeId: z.number().int().positive(),
     sessionIds: z.array(z.number().int().positive()).optional(),
     encounterIds: z.array(z.number().int().positive()).optional(),
     mapIds: z.array(z.number().int().positive()).optional(),
   },
-}, async ({ nodeId, ...links }) => {
-  const r = await callApi(`/api/story/${nodeId}/links`, { method: 'PUT', body: JSON.stringify(links) })
+}, async ({ nodeId, sessionIds, encounterIds, mapIds }) => {
+  type Linked = { id: number }
+  const current = await callApi(`/api/story/${nodeId}`)
+  if (!current.ok) return asText(current.body)
+  const node = current.body as { sessions: Linked[], encounters: Linked[], maps: Linked[] }
+  /** Existing ids plus the new ones (undefined when nothing new was passed for that kind). */
+  const merge = (existing: Linked[], added?: number[]) => (added ? [...new Set([...existing.map(l => l.id), ...added])] : undefined)
+
+  const r = await callApi(`/api/story/${nodeId}/links`, {
+    method: 'PUT',
+    body: JSON.stringify({
+      sessionIds: merge(node.sessions, sessionIds),
+      encounterIds: merge(node.encounters, encounterIds),
+      mapIds: merge(node.maps, mapIds),
+    }),
+  })
   if (!r.ok) return asText(r.body)
   const n = r.body as { id: number, name: string, sessions: unknown[], encounters: unknown[], maps: unknown[] }
   return asText({ id: n.id, name: n.name, playedInSessions: n.sessions, encounters: n.encounters, maps: n.maps })
-})
-
-server.registerTool('delete_story_node', {
-  description: 'Delete a scenario entry AND everything below it. DESTRUCTIVE: first call with confirm=false to get a preview of what would go, show it to the user, and only call again with confirm=true after they agreed. Consider setting status skipped instead.',
-  inputSchema: {
-    campaignId: z.number().int().positive(),
-    nodeId: z.number().int().positive(),
-    confirm: z.boolean().default(false).describe('false = preview only (nothing is deleted).'),
-  },
-}, async ({ campaignId, nodeId, confirm }) => {
-  const list = await fetchStory(campaignId)
-  if (!Array.isArray(list)) return asText(list.body)
-  const node = list.find(n => n.id === nodeId)
-  if (!node) return asText({ ok: false, error: `Scenario entry ${nodeId} not found in campaign ${campaignId}` })
-  if (!confirm) {
-    /** All story descendants of a node - the same set the deletion removes (visits each node once). */
-    const below = (id: number, seen = new Set<number>([id])): StoryListItem[] => list
-      .filter(n => n.parent_id === id && !seen.has(n.id))
-      .flatMap((n) => {
-        seen.add(n.id)
-        return [n, ...below(n.id, seen)]
-      })
-    const descendants = below(nodeId)
-    return asText({
-      preview: { id: node.id, name: node.name, kind: node.kind, alsoDeleted: descendants.map(n => ({ id: n.id, name: n.name, kind: n.kind })) },
-      note: 'Nothing deleted. Call again with confirm=true after the user agreed.',
-    })
-  }
-  const r = await callApi(`/api/story/${nodeId}`, { method: 'DELETE' })
-  return asText(r.ok ? { ok: true, deletedIds: (r.body as { deletedIds: number[] }).deletedIds } : r.body)
 })
 
 const transport = new StdioServerTransport()

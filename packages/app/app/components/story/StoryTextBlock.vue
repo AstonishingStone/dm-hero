@@ -87,6 +87,7 @@
 import { MdPreview } from 'md-editor-v3'
 import 'md-editor-v3/lib/preview.css'
 import { useTheme } from 'vuetify'
+import { MENTION_STYLES } from '~~/types/story'
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -129,32 +130,14 @@ function focusEditor() {
   const md = editorComp.value?.editorRef
   if (md?.focus) md.focus('end')
 }
-// The editor mounts client-side; focus once it's there even without a transition
+// The editor mounts client-side; focus once it's there even without a transition -
+// also when the block appears already editing (a field added with the "Add:" buttons)
 watch(() => props.editing, async (on) => {
   if (!on) return
   await nextTick()
   setTimeout(focusEditor, 200)
-})
+}, { immediate: true })
 const theme = useTheme()
-
-const BADGE_COLORS: Record<string, string> = {
-  npc: '#D4A574',
-  location: '#8B7355',
-  item: '#CC8844',
-  faction: '#7B92AB',
-  lore: '#9C6B98',
-  player: '#4CAF50',
-  session: '#1976D2',
-}
-const BADGE_ICONS: Record<string, string> = {
-  npc: 'mdi-account',
-  location: 'mdi-map-marker',
-  item: 'mdi-sword',
-  faction: 'mdi-shield',
-  lore: 'mdi-book-open-variant',
-  player: 'mdi-account-star',
-  session: 'mdi-calendar',
-}
 
 // The preview only re-renders on text changes - names arriving later need a fresh render
 const namesKey = computed(() => Object.entries(props.names).map(([k, v]) => `${k}=${v}`).join('|'))
@@ -165,8 +148,8 @@ const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<
 /** HTML of a clickable entity badge for {{type:id}}, named from `names`. */
 function badge(type: string, id: string) {
   const name = props.names[`${type}:${id}`]
-  const color = BADGE_COLORS[type] ?? '#888888'
-  const icon = BADGE_ICONS[type] ?? 'mdi-link'
+  const color = MENTION_STYLES[type]?.color ?? '#888888'
+  const icon = MENTION_STYLES[type]?.icon ?? 'mdi-link'
   return `<span class="entity-badge" data-type="${type}" data-id="${id}" style="background-color: ${color}; color: white; padding: 1px 8px; border-radius: 12px; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;"><i class="mdi ${icon}"></i>${escapeHtml(name ?? `${type} #${id}`)}</span>`
 }
 

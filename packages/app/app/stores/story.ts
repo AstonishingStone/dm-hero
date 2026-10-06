@@ -12,6 +12,8 @@ export const useStoryStore = defineStore('story', {
     nodes: [] as StoryNodeListItem[],
     loading: false,
     lastFetchedCampaignId: null as number | null,
+    /** Bumped by every tree load: an answer only applies if no newer load started */
+    treeRequest: 0,
   }),
 
   getters: {
@@ -83,17 +85,22 @@ export const useStoryStore = defineStore('story', {
   actions: {
     /** Load the tree of a campaign. */
     async fetchNodes(campaignId: number) {
+      // Switching campaigns quickly: an older, slower answer must not replace the newer tree
+      const request = ++this.treeRequest
       this.loading = true
       try {
-        this.nodes = await $fetch<StoryNodeListItem[]>('/api/story', { query: { campaignId } })
+        const nodes = await $fetch<StoryNodeListItem[]>('/api/story', { query: { campaignId } })
+        if (request !== this.treeRequest) return
+        this.nodes = nodes
         this.lastFetchedCampaignId = campaignId
       }
       catch (error) {
+        if (request !== this.treeRequest) return
         console.error('Failed to fetch story nodes:', error)
         this.nodes = []
       }
       finally {
-        this.loading = false
+        if (request === this.treeRequest) this.loading = false
       }
     },
 
@@ -135,11 +142,14 @@ export const useStoryStore = defineStore('story', {
 
     /** Move a node under parentId at index; reloads on failure to drop the optimistic drag. */
     async moveNode(id: number, parentId: number | null, index: number) {
+      // A tree loaded meanwhile (e.g. another campaign) wins over this answer
+      const request = this.treeRequest
       try {
-        this.nodes = await $fetch<StoryNodeListItem[]>('/api/story/move', {
+        const nodes = await $fetch<StoryNodeListItem[]>('/api/story/move', {
           method: 'POST',
           body: { id, parentId, index },
         })
+        if (request === this.treeRequest) this.nodes = nodes
       }
       catch (error) {
         // Drop the optimistic drag result

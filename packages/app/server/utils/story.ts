@@ -2,10 +2,13 @@ import type Database from 'better-sqlite3'
 import { syncStoryNodeMentions } from './extract-mentions'
 import { sanitizeMusicLinks } from './music-links'
 import {
+  defaultKindForDepth,
   normalizeStoryMetadata,
+  STORY_NAME_MAX,
   STORY_NODE_KINDS,
   STORY_NODE_STATUSES,
   STORY_NODE_TEXT_FIELDS,
+  STORY_TEXT_MAX,
   type StoryNode,
   type StoryNodeKind,
   type StoryNodeLinkedEncounter,
@@ -28,7 +31,7 @@ export class StoryError extends Error {
 }
 
 /** Id of the StoryNode entity type. */
-export function getStoryTypeId(db: Database.Database): number {
+function getStoryTypeId(db: Database.Database): number {
   const row = db.prepare('SELECT id FROM entity_types WHERE name = ?').get('StoryNode') as { id: number } | undefined
   if (!row) throw new StoryError(500, 'StoryNode entity type not found')
   return row.id
@@ -46,14 +49,35 @@ interface NodeRow {
   updated_at: string
 }
 
-/** Parse stored metadata, with defaults for kind/status (bad JSON counts as empty). */
-function parseMetadata(raw: string | null) {
+/** The stored metadata object as-is (bad JSON or a non-object counts as empty). */
+function readStoredMetadata(raw: string | null): Record<string, unknown> {
   try {
-    return normalizeStoryMetadata(raw ? JSON.parse(raw) : null)
+    const parsed = raw ? JSON.parse(raw) : null
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
   }
   catch {
-    return normalizeStoryMetadata(null)
+    return {}
   }
+}
+
+/** Stored metadata in its known shape (see normalizeStoryMetadata). */
+function parseMetadata(raw: string | null) {
+  return normalizeStoryMetadata(readStoredMetadata(raw))
+}
+
+/** A trimmed, non-empty name within the length limit. */
+function validName(value: unknown): string {
+  const name = typeof value === 'string' ? value.trim() : ''
+  if (!name) throw new StoryError(400, 'Name must not be empty')
+  if (name.length > STORY_NAME_MAX) throw new StoryError(400, `Name is longer than ${STORY_NAME_MAX} characters`)
+  return name
+}
+
+/** A text field value: a string within the length limit. */
+function validText(field: string, value: unknown): string {
+  if (typeof value !== 'string') throw new StoryError(400, `${field} must be a string`)
+  if (value.length > STORY_TEXT_MAX) throw new StoryError(400, `${field} is longer than ${STORY_TEXT_MAX} characters`)
+  return value
 }
 
 /** A live story node row; 404 if it does not exist or is deleted. */
@@ -164,8 +188,8 @@ export function createStoryNode(
   db: Database.Database,
   input: { campaignId: number, name: string, kind?: StoryNodeKind, parentId?: number | null },
 ): StoryNode {
-  const name = input.name?.trim()
-  if (!name || !input.campaignId) throw new StoryError(400, 'Name and Campaign ID are required')
+  if (!input.campaignId) throw new StoryError(400, 'Campaign ID is required')
+  const name = validName(input.name)
   const parentId = input.parentId ?? null
   const kind = STORY_NODE_KINDS.includes(input.kind as StoryNodeKind) ? input.kind! : 'scene'
 
@@ -198,7 +222,10 @@ export interface StoryNodePatch {
 export function updateStoryNode(db: Database.Database, id: number, patch: StoryNodePatch): StoryNode {
   db.transaction(() => {
     const row = getNodeRow(db, id)
-    const metadata = parseMetadata(row.metadata)
+    // Known fields in their checked form; keys this feature doesn't know (e.g. import tracking) stay as they are
+    const known = new Set<string>(['kind', 'status', 'musicLinks', ...STORY_NODE_TEXT_FIELDS])
+    const foreign = Object.fromEntries(Object.entries(readStoredMetadata(row.metadata)).filter(([key]) => !known.has(key)))
+    const metadata: StoryNodeMetadata & Record<string, unknown> = { ...foreign, ...parseMetadata(row.metadata) }
 
     if (patch.kind !== undefined) {
       if (!STORY_NODE_KINDS.includes(patch.kind)) throw new StoryError(400, 'Invalid kind')
@@ -209,16 +236,12 @@ export function updateStoryNode(db: Database.Database, id: number, patch: StoryN
       metadata.status = patch.status
     }
     for (const field of STORY_NODE_TEXT_FIELDS) {
-      if (patch[field] !== undefined) metadata[field] = String(patch[field] ?? '')
+      if (patch[field] !== undefined) metadata[field] = validText(field, patch[field] ?? '')
     }
     if (patch.musicLinks !== undefined) metadata.musicLinks = sanitizeMusicLinks(patch.musicLinks)
 
-    let name = row.name
-    if (patch.name !== undefined) {
-      name = String(patch.name).trim()
-      if (!name) throw new StoryError(400, 'Name must not be empty')
-    }
-    const description = patch.description !== undefined ? patch.description : row.description
+    const name = patch.name !== undefined ? validName(patch.name) : row.name
+    const description = patch.description !== undefined ? validText('description', patch.description ?? '') : row.description
 
     db.prepare(`
       UPDATE entities SET name = ?, description = ?, metadata = ?, updated_at = CURRENT_TIMESTAMP
@@ -372,11 +395,8 @@ export interface StoryOutlineResult {
   children: StoryOutlineResult[]
 }
 
-export const MAX_OUTLINE_NODES = 500
-export const MAX_OUTLINE_DEPTH = 8
-
-/** Without an explicit kind: arc, chapter, then scenes - counted from the top of the tree. */
-const kindForDepth = (depth: number): StoryNodeKind => (['arc', 'chapter'] as const)[depth] ?? 'scene'
+const MAX_OUTLINE_NODES = 500
+const MAX_OUTLINE_DEPTH = 8
 
 /**
  * Create a whole nested outline under parentId (null = top level), all or nothing.
@@ -406,10 +426,12 @@ export function createStoryOutline(
       const at = `${path}[${i}]`
       count++
       if (!n || typeof n.name !== 'string' || !n.name.trim()) errors.push(`${at}: name is required`)
+      else if (n.name.trim().length > STORY_NAME_MAX) errors.push(`${at}: name is longer than ${STORY_NAME_MAX} characters`)
       if (n?.kind !== undefined && !STORY_NODE_KINDS.includes(n.kind)) errors.push(`${at}: invalid kind "${n.kind}" (${STORY_NODE_KINDS.join(', ')})`)
       if (n?.status !== undefined && !STORY_NODE_STATUSES.includes(n.status)) errors.push(`${at}: invalid status "${n.status}" (${STORY_NODE_STATUSES.join(', ')})`)
       for (const f of ['description', ...STORY_NODE_TEXT_FIELDS] as const) {
         if (n?.[f] !== undefined && typeof n[f] !== 'string') errors.push(`${at}: ${f} must be a string`)
+        else if ((n?.[f]?.length ?? 0) > STORY_TEXT_MAX) errors.push(`${at}: ${f} is longer than ${STORY_TEXT_MAX} characters`)
       }
       if (n?.children !== undefined) check(n.children, `${at}.children`, depth + 1)
     })
@@ -426,7 +448,7 @@ export function createStoryOutline(
     /** Create one level and recurse into its children. */
     const build = (nodes: StoryOutlineInput[], parent: number | null, depth: number): StoryOutlineResult[] =>
       nodes.map((n) => {
-        const kind = n.kind ?? kindForDepth(depth)
+        const kind = n.kind ?? defaultKindForDepth(depth)
         const status = n.status ?? 'idea'
         let id: number | null = null
         if (!dryRun) {

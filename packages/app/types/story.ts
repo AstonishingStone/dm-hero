@@ -1,4 +1,4 @@
-import type { SessionMusicLink } from './session-music'
+import { isValidMusicUrl, type SessionMusicLink } from './session-music'
 
 // The DM's campaign manager: a free tree of story nodes, GM-only (never shared to the table)
 
@@ -25,6 +25,26 @@ export const STORY_NODE_STATUS_COLORS: Record<StoryNodeStatus, string> = {
   ready: 'primary',
   played: 'success',
   skipped: 'warning',
+}
+
+/** Icon and badge color of each {{type:id}} mention type */
+export const MENTION_STYLES: Record<string, { icon: string, color: string }> = {
+  npc: { icon: 'mdi-account', color: '#D4A574' },
+  location: { icon: 'mdi-map-marker', color: '#8B7355' },
+  item: { icon: 'mdi-sword', color: '#CC8844' },
+  faction: { icon: 'mdi-shield', color: '#7B92AB' },
+  lore: { icon: 'mdi-book-open-variant', color: '#9C6B98' },
+  player: { icon: 'mdi-account-star', color: '#4CAF50' },
+  session: { icon: 'mdi-calendar', color: '#1976D2' },
+}
+
+/** Longest allowed name and text (in characters) */
+export const STORY_NAME_MAX = 200
+export const STORY_TEXT_MAX = 100_000
+
+/** Default kind of a new entry by its depth in the tree: arc, chapter, then scenes. */
+export function defaultKindForDepth(depth: number): StoryNodeKind {
+  return (['arc', 'chapter'] as const)[depth] ?? 'scene'
 }
 
 export interface StoryNodeMetadata extends Partial<Record<StoryNodeTextField, string>> {
@@ -92,12 +112,22 @@ export interface StoryNodeLinks {
   mapIds?: number[]
 }
 
-/** Normalize stored metadata: defaults for kind/status */
+/**
+ * Stored metadata in a known shape, whatever is in the database (it may come from an
+ * imported archive): kind/status default to scene/idea, texts are strings, music links valid.
+ */
 export function normalizeStoryMetadata(raw: unknown): StoryNodeMetadata & { kind: StoryNodeKind, status: StoryNodeStatus } {
-  const m = (raw && typeof raw === 'object' ? raw : {}) as StoryNodeMetadata
-  return {
-    ...m,
-    kind: STORY_NODE_KINDS.includes(m.kind as StoryNodeKind) ? m.kind! : 'scene',
-    status: STORY_NODE_STATUSES.includes(m.status as StoryNodeStatus) ? m.status! : 'idea',
+  const m = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
+  const result: StoryNodeMetadata & { kind: StoryNodeKind, status: StoryNodeStatus } = {
+    kind: STORY_NODE_KINDS.includes(m.kind as StoryNodeKind) ? m.kind as StoryNodeKind : 'scene',
+    status: STORY_NODE_STATUSES.includes(m.status as StoryNodeStatus) ? m.status as StoryNodeStatus : 'idea',
   }
+  for (const field of STORY_NODE_TEXT_FIELDS) {
+    if (typeof m[field] === 'string') result[field] = m[field] as string
+  }
+  if (Array.isArray(m.musicLinks)) {
+    result.musicLinks = (m.musicLinks as SessionMusicLink[]).filter(l =>
+      l && typeof l.label === 'string' && typeof l.url === 'string' && isValidMusicUrl(l.url))
+  }
+  return result
 }

@@ -299,3 +299,40 @@ describe('malformed trees (e.g. from an import)', () => {
     expect(repairStoryTree(db, campaignId)).toEqual([]) // nothing left to fix
   })
 })
+
+describe('input hardening', () => {
+  it('reads malformed metadata (e.g. from an import) in a safe shape', () => {
+    const node = createStoryNode(db, { campaignId, name: 'Imported' })
+    db.prepare('UPDATE entities SET metadata = ? WHERE id = ?').run(JSON.stringify({
+      kind: 'saga',
+      status: 42,
+      hook: { evil: true },
+      secrets: 'kept',
+      musicLinks: [{ label: 'ok', url: 'https://example.com/a' }, { label: 'bad', url: 'javascript:alert(1)' }, 'junk'],
+      _importTracking: { sourceAdventureSlug: 'x' },
+    }), node.id)
+
+    expect(getStoryNode(db, node.id).metadata).toEqual({
+      kind: 'scene',
+      status: 'idea',
+      secrets: 'kept',
+      musicLinks: [{ label: 'ok', url: 'https://example.com/a' }],
+    })
+
+    // Writing back keeps foreign keys like import tracking, but never the bad values
+    updateStoryNode(db, node.id, { outcomes: 'new' })
+    const stored = JSON.parse((db.prepare('SELECT metadata FROM entities WHERE id = ?').get(node.id) as { metadata: string }).metadata)
+    expect(stored._importTracking).toEqual({ sourceAdventureSlug: 'x' })
+    expect(stored.hook).toBeUndefined()
+    expect(stored.kind).toBe('scene')
+  })
+
+  it('rejects names and texts that are too long or not strings', () => {
+    const node = createStoryNode(db, { campaignId, name: 'Scene' })
+    expect(() => createStoryNode(db, { campaignId, name: 'x'.repeat(201) })).toThrow(StoryError)
+    expect(() => updateStoryNode(db, node.id, { hook: 'x'.repeat(100_001) })).toThrow(StoryError)
+    expect(() => updateStoryNode(db, node.id, { secrets: 5 as never })).toThrow(StoryError)
+    expect(() => updateStoryNode(db, node.id, { description: { a: 1 } as never })).toThrow(StoryError)
+    expect(() => createStoryOutline(db, { campaignId, nodes: [{ name: 'A', readAloud: 'x'.repeat(100_001) }] })).toThrow(/longer than/)
+  })
+})

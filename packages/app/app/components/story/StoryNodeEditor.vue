@@ -110,7 +110,7 @@
         <v-chip
           v-for="m in cast"
           :key="m.id"
-          :prepend-icon="MENTION_ICONS[m.type] ?? 'mdi-tag'"
+          :prepend-icon="MENTION_STYLES[m.type]?.icon ?? 'mdi-tag'"
           size="small"
           variant="tonal"
           @click="previewEntity(m.type, m.id)"
@@ -387,6 +387,7 @@
 import type { EntityPreviewType } from '~/components/shared/EntityPreviewDialog.vue'
 import { musicLinkIcon, type SessionMusicLink } from '~~/types/session-music'
 import {
+  MENTION_STYLES,
   STORY_NODE_KIND_ICONS,
   STORY_NODE_KINDS,
   STORY_NODE_STATUS_COLORS,
@@ -418,14 +419,8 @@ const BLOCKS: Array<{ field: BlockField, icon: string, variant: 'plain' | 'boxed
   { field: 'outcomes', icon: 'mdi-call-split', variant: 'plain', color: 'success' },
 ]
 
-const MENTION_ICONS: Record<string, string> = {
-  npc: 'mdi-account',
-  location: 'mdi-map-marker',
-  item: 'mdi-sword',
-  faction: 'mdi-shield',
-  lore: 'mdi-book-open-variant',
-  player: 'mdi-account-star',
-}
+/** Mention types that have a preview dialog (sessions don't) */
+const PREVIEW_TYPES = new Set<string>(['npc', 'location', 'item', 'faction', 'lore', 'player'])
 
 interface SessionOption { id: number, title: string, session_number: number | null, date: string | null }
 
@@ -467,7 +462,7 @@ const previous = computed(() => (position.value > 0 ? storyStore.ordered[positio
 const next = computed(() => (position.value >= 0 ? storyStore.ordered[position.value + 1] : undefined))
 const latestSession = computed(() => sessions.value[0] ?? null)
 
-const cast = computed(() => (node.value?.mentions ?? []).filter(m => m.type in MENTION_ICONS))
+const cast = computed(() => (node.value?.mentions ?? []).filter(m => PREVIEW_TYPES.has(m.type)))
 
 // Badge names: mentioned entities + sessions
 const names = computed(() => {
@@ -587,23 +582,37 @@ watch(form, () => {
   timer = setTimeout(() => save(), 800)
 }, { deep: true })
 
-/** Save the changed fields of the form (autosave target); skipped when nothing changed or the name is empty. */
-async function save() {
+// Saves run one after another, so an older request can never overtake a newer one
+let saveChain: Promise<void> = Promise.resolve()
+
+/** Queue a save of the changed fields; resolves when every save queued so far is done. */
+function save(): Promise<void> {
   if (timer) {
     clearTimeout(timer)
     timer = null
   }
-  if (!node.value) return
+  saveChain = saveChain.then(saveChanges)
+  return saveChain
+}
+
+/**
+ * Send what differs from the last saved state, as it is when this save runs (later edits
+ * stay dirty for the next save). Skipped when nothing changed or the name is empty.
+ */
+async function saveChanges() {
+  const current = node.value
+  if (!current) return
   const patch = { ...changedFields.value }
-  if (Object.keys(patch).length === 0) return
-  if (patch.name !== undefined && !patch.name.trim()) return
-  const id = node.value.id
+  if (Object.keys(patch).length === 0 || (patch.name !== undefined && !patch.name.trim())) return
+  const version = loadVersion
   const sent = JSON.parse(JSON.stringify(form)) as Form
   saving.value = true
   try {
-    const updated = await storyStore.updateNode(id, patch)
+    const updated = await storyStore.updateNode(current.id, patch)
+    // Another node was opened meanwhile: this answer is not about the editor's node any more
+    if (version !== loadVersion || node.value?.id !== current.id) return
     saved.value = sent
-    if (node.value?.id === id) node.value = { ...node.value, mentions: updated.mentions, updated_at: updated.updated_at }
+    node.value = { ...node.value, mentions: updated.mentions, updated_at: updated.updated_at }
   }
   catch (error) {
     console.error('Failed to save story node:', error)
@@ -614,9 +623,9 @@ async function save() {
   }
 }
 
-/** Save pending changes right away (switching nodes, leaving the page). */
-async function flush() {
-  if (timer || (node.value && dirty.value)) await save()
+/** Save pending changes right away and wait for every save in progress (switching nodes, leaving the page). */
+function flush(): Promise<void> {
+  return save()
 }
 
 /** Replace the given link lists (sessions / encounters / maps) and show the result. */
@@ -655,7 +664,7 @@ const previewType = ref<EntityPreviewType>('npc')
 const previewId = ref<number | null>(null)
 /** Open the preview dialog of a mentioned entity (sessions and unknown types have none). */
 function previewEntity(type: string, id: number) {
-  if (!(type in MENTION_ICONS)) return
+  if (!PREVIEW_TYPES.has(type)) return
   previewType.value = type as EntityPreviewType
   previewId.value = id
   showPreview.value = true

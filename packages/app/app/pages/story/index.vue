@@ -140,10 +140,10 @@
 <script setup lang="ts">
 import type { StoryTreeContext } from '~/components/story/StoryTreeBranch.vue'
 import {
+  defaultKindForDepth,
   STORY_NODE_KIND_ICONS,
   STORY_NODE_STATUS_COLORS,
   STORY_NODE_STATUSES,
-  type StoryNodeKind,
   type StoryNodeStatus,
 } from '~~/types/story'
 
@@ -227,8 +227,6 @@ function breadcrumb(id: number): string {
 const adding = ref<number | null | undefined>(undefined)
 const addText = ref('')
 let lastCreatedId: number | null = null
-/** Default kind of a new entry by depth: arc, chapter, then scenes. */
-const kindForDepth = (depth: number): StoryNodeKind => (['arc', 'chapter'] as const)[depth] ?? 'scene'
 
 /** Open the quick-add row under parentId (null = top level). */
 function startAdd(parentId: number | null) {
@@ -252,7 +250,7 @@ async function submitAdd(name: string) {
   const parentId = adding.value
   const depth = parentId ? storyStore.ancestors(parentId).length + 1 : 0
   try {
-    const node = await storyStore.createNode(activeCampaignIdNumber.value, name, kindForDepth(depth), parentId)
+    const node = await storyStore.createNode(activeCampaignIdNumber.value, name, defaultKindForDepth(depth), parentId)
     lastCreatedId = node.id
   }
   catch (error) {
@@ -352,7 +350,7 @@ provide<StoryTreeContext>('storyTree', {
   submitAdd,
   indent,
   outdent,
-  kindForDepth,
+  kindForDepth: defaultKindForDepth,
 })
 
 watch(activeCampaignIdNumber, (id) => {
