@@ -494,7 +494,7 @@
 
                   <v-list-item-title>{{ faction.name }}</v-list-item-title>
                   <v-list-item-subtitle v-if="faction.description">
-                    {{ faction.description }}
+                    <SharedMentionText :text="faction.description" plain />
                   </v-list-item-subtitle>
 
                   <template #append>

@@ -97,7 +97,7 @@
                 <h3 class="text-title-medium font-weight-bold mb-2">
                   {{ $t('factions.description') }}
                 </h3>
-                <p class="text-body-medium" style="white-space: pre-wrap">{{ faction.description }}</p>
+                <p class="text-body-medium" style="white-space: pre-wrap"><SharedMentionText :text="faction.description" /></p>
               </div>
 
               <!-- Metadata Grid -->

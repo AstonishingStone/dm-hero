@@ -70,7 +70,7 @@
     <v-card-text class="pt-0 pb-3" style="flex-grow: 0">
       <div class="lore-description">
         <p v-if="lore.description" class="text-body-medium text-medium-emphasis mb-0">
-          {{ lore.description }}
+          <SharedMentionText :text="lore.description" plain />
         </p>
         <p v-else class="text-body-medium text-disabled mb-0 font-italic">
           {{ $t('common.noDescription') }}

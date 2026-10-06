@@ -80,7 +80,7 @@
                   {{ $t('locations.description') }}
                 </h3>
                 <p class="text-body-large" style="white-space: pre-wrap">
-                  {{ location.description }}
+                  <SharedMentionText :text="location.description" />
                 </p>
               </div>
 

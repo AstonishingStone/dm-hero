@@ -28,7 +28,7 @@
           </template>
           <template #subtitle>
             <span v-if="internalItem.raw.description" class="text-truncate">
-              {{ internalItem.raw.description?.substring(0, 50) }}{{ internalItem.raw.description?.length > 50 ? '...' : '' }}
+              <SharedMentionText :text="internalItem.raw.description" :max-length="50" />
             </span>
           </template>
         </v-list-item>

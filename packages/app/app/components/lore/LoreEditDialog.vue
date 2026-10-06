@@ -147,7 +147,7 @@
                   </template>
                   <v-list-item-title>{{ npc.name }}</v-list-item-title>
                   <v-list-item-subtitle v-if="npc.description">
-                    {{ npc.description.substring(0, 100) }}{{ npc.description.length > 100 ? '...' : '' }}
+                    <SharedMentionText :text="npc.description" :max-length="100" />
                   </v-list-item-subtitle>
                   <template #append>
                     <v-btn
@@ -213,7 +213,7 @@
                   </template>
                   <v-list-item-title>{{ faction.name }}</v-list-item-title>
                   <v-list-item-subtitle v-if="faction.description">
-                    {{ faction.description.substring(0, 100) }}{{ faction.description.length > 100 ? '...' : '' }}
+                    <SharedMentionText :text="faction.description" :max-length="100" />
                   </v-list-item-subtitle>
                   <template #append>
                     <v-btn icon="mdi-delete" variant="text" size="small" color="error" @click="removeFaction(faction)" />
@@ -295,7 +295,7 @@
                   </template>
                   <v-list-item-title>{{ item.name }}</v-list-item-title>
                   <v-list-item-subtitle v-if="item.description">
-                    {{ item.description.substring(0, 80) }}{{ item.description.length > 80 ? '...' : '' }}
+                    <SharedMentionText :text="item.description" :max-length="80" />
                   </v-list-item-subtitle>
                   <template #append>
                     <v-btn icon="mdi-delete" variant="text" color="error" size="small" @click="removeItem(item)" />
@@ -349,7 +349,7 @@
                   </template>
                   <v-list-item-title>{{ location.name }}</v-list-item-title>
                   <v-list-item-subtitle v-if="location.description">
-                    {{ location.description.substring(0, 80) }}{{ location.description.length > 80 ? '...' : '' }}
+                    <SharedMentionText :text="location.description" :max-length="80" />
                   </v-list-item-subtitle>
                   <template #append>
                     <v-btn

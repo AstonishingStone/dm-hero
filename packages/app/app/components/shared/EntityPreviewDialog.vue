@@ -25,7 +25,7 @@
             cover
           />
           <div v-if="entity.description" class="text-body-large mb-4" style="white-space: pre-wrap">
-            {{ entity.description }}
+            <SharedMentionText :text="entity.description" />
           </div>
           <v-divider class="my-4" />
           <div class="text-body-medium">
@@ -98,7 +98,7 @@
             cover
           />
           <div v-if="entity.description" class="text-body-large mb-4" style="white-space: pre-wrap">
-            {{ entity.description }}
+            <SharedMentionText :text="entity.description" />
           </div>
           <v-divider class="my-4" />
           <div class="text-body-medium">
@@ -136,7 +136,7 @@
             </v-chip>
           </div>
           <div v-if="entity.description" class="text-body-large mb-4" style="white-space: pre-wrap">
-            {{ entity.description }}
+            <SharedMentionText :text="entity.description" />
           </div>
           <v-divider class="my-4" />
           <div class="d-flex flex-wrap ga-2 mb-3">
@@ -166,7 +166,7 @@
             cover
           />
           <div v-if="entity.description" class="text-body-large mb-4" style="white-space: pre-wrap">
-            {{ entity.description }}
+            <SharedMentionText :text="entity.description" />
           </div>
           <v-divider class="my-4" />
           <div class="text-body-medium">
@@ -198,7 +198,7 @@
             cover
           />
           <div v-if="entity.description" class="text-body-large mb-4" style="white-space: pre-wrap">
-            {{ entity.description }}
+            <SharedMentionText :text="entity.description" />
           </div>
           <v-divider class="my-4" />
           <div class="text-body-medium">
@@ -227,7 +227,7 @@
             cover
           />
           <div v-if="entity.description" class="text-body-large mb-4" style="white-space: pre-wrap">
-            {{ entity.description }}
+            <SharedMentionText :text="entity.description" />
           </div>
           <v-divider class="my-4" />
           <div class="text-body-medium">

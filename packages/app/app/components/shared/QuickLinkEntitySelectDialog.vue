@@ -49,7 +49,7 @@
 
             <v-list-item-title>{{ entity.name }}</v-list-item-title>
             <v-list-item-subtitle v-if="entity.description" class="text-truncate">
-              {{ entity.description }}
+              <SharedMentionText :text="entity.description" plain />
             </v-list-item-subtitle>
           </v-list-item>
         </v-list>
