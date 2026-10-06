@@ -1,30 +1,11 @@
 import { getDb } from '../../utils/db'
 import { createLevenshtein } from '../../utils/levenshtein'
-import { parseSearchQuery } from '../../utils/search-query-parser'
+import { parseSearchQuery, quoteFts5Term } from '../../utils/search-query-parser'
 import { extractTagFilters, resolveTagFilter } from '../../utils/searchQuery'
 import { normalizeText } from '../../utils/normalize'
 
 // Initialize Levenshtein function once
 const levenshtein = createLevenshtein()
-
-// Quote FTS5 terms that contain special characters
-function quoteFts5Term(term: string): string {
-  if (typeof term !== 'string') return ''
-
-  // FTS5 special chars that need quoting: - . () [] {}
-  if (
-    term.includes('-')
-    || term.includes('.')
-    || term.includes('(')
-    || term.includes(')')
-    || term.includes('[')
-    || term.includes(']')
-  ) {
-    const escaped = term.replace(/"/g, '""')
-    return `"${escaped}"`
-  }
-  return term
-}
 
 export default defineEventHandler((event) => {
   const db = getDb()
@@ -181,7 +162,7 @@ export default defineEventHandler((event) => {
 
       // FALLBACK 1: Try prefix wildcard if exact match found nothing (only for simple queries)
       if (factions.length === 0 && useExactMatch && !parsedQuery.hasOperators) {
-        ftsQuery = `${quoteFts5Term(searchTerm)}*`
+        ftsQuery = parsedQuery.terms.map(t => `${quoteFts5Term(t)}*`).join(' ')
         useExactMatch = false
 
         factions = db

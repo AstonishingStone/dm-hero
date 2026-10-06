@@ -136,3 +136,12 @@ export function parseSearchQuery(query: string): ParsedQuery {
     useExactFirst: false, // Complex queries use as-is
   }
 }
+
+/**
+ * Quote a single term as an FTS5 string so user input can never be parsed as
+ * FTS5 syntax (apostrophes, hyphens, dots, brackets, colons, ...).
+ * Append `*` to the result for a prefix match: `"l'epee"*`.
+ */
+export function quoteFts5Term(term: string): string {
+  return `"${term.replace(/"/g, '""')}"`
+}

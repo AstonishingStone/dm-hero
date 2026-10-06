@@ -1,6 +1,6 @@
 import { getDb } from '../../utils/db'
 import { createLevenshtein } from '../../utils/levenshtein'
-import { parseSearchQuery } from '../../utils/search-query-parser'
+import { parseSearchQuery, quoteFts5Term } from '../../utils/search-query-parser'
 import { extractTagFilters, resolveTagFilter } from '../../utils/searchQuery'
 import { normalizeText } from '../../utils/normalize'
 
@@ -107,7 +107,7 @@ export default defineEventHandler((event) => {
       }
       else {
         // Reconstruct query with original operators
-        const expandedTerms = parsedQuery.terms.map(term => `${term}*`)
+        const expandedTerms = parsedQuery.terms.map(term => `${quoteFts5Term(term)}*`)
         const fts5QueryUpper = parsedQuery.fts5Query.toUpperCase()
 
         if (fts5QueryUpper.includes(' AND ')) {
@@ -123,7 +123,7 @@ export default defineEventHandler((event) => {
     }
     else {
       // Simple query: add all terms as OR
-      ftsQuery = parsedQuery.terms.map(t => `${t}*`).join(' OR ')
+      ftsQuery = parsedQuery.terms.map(t => `${quoteFts5Term(t)}*`).join(' OR ')
     }
 
     let useExactMatch = parsedQuery.useExactFirst
@@ -170,7 +170,7 @@ export default defineEventHandler((event) => {
 
       // FALLBACK 1: Try prefix wildcard if exact match found nothing (only for simple queries)
       if (locations.length === 0 && useExactMatch && !parsedQuery.hasOperators) {
-        ftsQuery = `${searchTerm}*`
+        ftsQuery = parsedQuery.terms.map(t => `${quoteFts5Term(t)}*`).join(' ')
         useExactMatch = false
 
         locations = db
