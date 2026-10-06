@@ -91,7 +91,7 @@
                     {{ $t('lore.description') }}
                   </div>
                   <div class="text-body-large" style="white-space: pre-wrap">
-                    {{ lore.description }}
+                    <SharedMentionText :text="lore.description" />
                   </div>
                 </v-card-text>
               </v-card>

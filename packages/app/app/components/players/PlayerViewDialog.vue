@@ -93,7 +93,7 @@
               <!-- Description -->
               <div v-if="player.description" class="mb-6">
                 <h3 class="text-title-medium font-weight-bold mb-2">{{ $t('players.description') }}</h3>
-                <p class="text-body-medium" style="white-space: pre-wrap">{{ player.description }}</p>
+                <p class="text-body-medium" style="white-space: pre-wrap"><SharedMentionText :text="player.description" /></p>
               </div>
 
               <!-- Contact Info -->

@@ -45,7 +45,7 @@
         </template>
         <v-list-item-title>{{ lore.name }}</v-list-item-title>
         <v-list-item-subtitle v-if="lore.description">
-          {{ lore.description.substring(0, 100) }}{{ lore.description.length > 100 ? '...' : '' }}
+          <SharedMentionText :text="lore.description" :max-length="100" />
         </v-list-item-subtitle>
         <template #append>
           <v-btn

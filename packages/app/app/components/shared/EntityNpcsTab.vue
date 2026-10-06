@@ -77,7 +77,7 @@
             {{ $t('common.rank') }}: {{ npc.notes.rank }}
           </span>
           <span v-if="npc.description" class="text-body-small text-medium-emphasis">
-            {{ npc.description.substring(0, 100) }}{{ npc.description.length > 100 ? '...' : '' }}
+            <SharedMentionText :text="npc.description" :max-length="100" />
           </span>
         </v-list-item-subtitle>
 

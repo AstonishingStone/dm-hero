@@ -97,7 +97,7 @@
             {{ item.quantity }}x
           </span>
           <span v-if="item.description" class="text-body-small text-medium-emphasis">
-            {{ item.description.substring(0, 100) }}{{ item.description.length > 100 ? '...' : '' }}
+            <SharedMentionText :text="item.description" :max-length="100" />
           </span>
         </v-list-item-subtitle>
 

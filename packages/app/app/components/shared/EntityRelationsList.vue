@@ -61,7 +61,7 @@
 
             <!-- Description -->
             <span v-if="entity.description" class="text-body-small text-medium-emphasis">
-              {{ entity.description }}
+              <SharedMentionText :text="entity.description" plain />
             </span>
           </div>
         </v-list-item-subtitle>

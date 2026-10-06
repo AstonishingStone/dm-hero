@@ -94,7 +94,7 @@
                   {{ $t('items.description') }}
                 </h3>
                 <p class="text-body-large" style="white-space: pre-wrap">
-                  {{ item.description }}
+                  <SharedMentionText :text="item.description" />
                 </p>
               </div>
 

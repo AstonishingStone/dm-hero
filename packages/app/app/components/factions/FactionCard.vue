@@ -82,7 +82,7 @@
     <v-card-text class="pt-0 pb-3" style="flex-grow: 0">
       <div class="faction-description">
         <p v-if="faction.description" class="text-body-medium text-medium-emphasis mb-0">
-          {{ faction.description }}
+          <SharedMentionText :text="faction.description" plain />
         </p>
         <p v-else class="text-body-medium text-disabled mb-0 font-italic">
           {{ $t('common.noDescription') }}

@@ -105,7 +105,7 @@
               <!-- Description -->
               <div v-if="npc.description" class="mb-6">
                 <h3 class="text-title-medium font-weight-bold mb-2">{{ $t('npcs.description') }}</h3>
-                <p class="text-body-medium" style="white-space: pre-wrap">{{ npc.description }}</p>
+                <p class="text-body-medium" style="white-space: pre-wrap"><SharedMentionText :text="npc.description" /></p>
               </div>
 
               <!-- Notes -->
