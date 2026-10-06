@@ -84,11 +84,11 @@
 </template>
 
 <script setup lang="ts">
-import { MdPreview } from 'md-editor-v3';
-import 'md-editor-v3/lib/preview.css';
-import { defineEmits, defineProps, withDefaults, } from 'vue';
-import { useTheme } from 'vuetify';
-import { MENTION_STYLES } from '~~/types/story';
+import { MdPreview } from 'md-editor-v3'
+import 'md-editor-v3/lib/preview.css'
+import { defineEmits, defineProps, withDefaults } from 'vue'
+import { useTheme } from 'vuetify'
+import { MENTION_STYLES } from '~~/types/story'
 
 const props = withDefaults(defineProps<{
   modelValue: string
