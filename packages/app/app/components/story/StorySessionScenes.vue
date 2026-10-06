@@ -43,8 +43,8 @@
 </template>
 
 <script setup lang="ts">
-import { defineEmits, defineProps, } from 'vue';
-import { STORY_NODE_KIND_ICONS, STORY_NODE_STATUS_COLORS, type StoryNodeListItem } from '~~/types/story';
+import { defineEmits, defineProps } from 'vue'
+import { STORY_NODE_KIND_ICONS, STORY_NODE_STATUS_COLORS, type StoryNodeListItem } from '~~/types/story'
 
 // The session side of "played in": which prepared scenes happened in this session
 const props = defineProps<{ sessionId: number, campaignId: number }>()
