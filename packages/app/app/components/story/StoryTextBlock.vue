@@ -84,10 +84,11 @@
 </template>
 
 <script setup lang="ts">
-import { MdPreview } from 'md-editor-v3'
-import 'md-editor-v3/lib/preview.css'
-import { useTheme } from 'vuetify'
-import { MENTION_STYLES } from '~~/types/story'
+import { MdPreview } from 'md-editor-v3';
+import 'md-editor-v3/lib/preview.css';
+import { defineEmits, defineProps, withDefaults, } from 'vue';
+import { useTheme } from 'vuetify';
+import { MENTION_STYLES } from '~~/types/story';
 
 const props = withDefaults(defineProps<{
   modelValue: string
@@ -148,8 +149,9 @@ const escapeHtml = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<
 /** HTML of a clickable entity badge for {{type:id}}, named from `names`. */
 function badge(type: string, id: string) {
   const name = props.names[`${type}:${id}`]
-  const color = MENTION_STYLES[type]?.color ?? '#888888'
-  const icon = MENTION_STYLES[type]?.icon ?? 'mdi-link'
+  const style = Object.hasOwn(MENTION_STYLES, type) ? MENTION_STYLES[type] : undefined
+  const color = style?.color ?? '#888888'
+  const icon = style?.icon ?? 'mdi-link'
   return `<span class="entity-badge" data-type="${type}" data-id="${id}" style="background-color: ${color}; color: white; padding: 1px 8px; border-radius: 12px; font-size: 0.875rem; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;"><i class="mdi ${icon}"></i>${escapeHtml(name ?? `${type} #${id}`)}</span>`
 }
 

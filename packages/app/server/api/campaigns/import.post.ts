@@ -1,44 +1,44 @@
-import { createWriteStream, mkdirSync, existsSync } from 'fs'
-import { readFile, rm } from 'fs/promises'
-import { join, dirname, extname } from 'path'
-import { tmpdir } from 'os'
 import { randomUUID } from 'crypto'
+import { createWriteStream, existsSync, mkdirSync } from 'fs'
+import { readFile, rm } from 'fs/promises'
+import { tmpdir } from 'os'
+import { dirname, extname, join } from 'path'
 import { pipeline } from 'stream/promises'
-import { getDb } from '~~/server/utils/db'
-import { getUploadPath } from '~~/server/utils/paths'
 import { hasImportableCalendar } from '~~/server/utils/calendarImport'
-import { STANDARD_RACE_KEYS, STANDARD_CLASS_KEYS } from '~~/server/utils/i18n-lookup'
-import {
-  isValidTagName,
-  isValidTagColor,
-  normaliseTagName,
-  DEFAULT_TAG_COLOR,
-} from '~~/types/tag'
+import { getDb } from '~~/server/utils/db'
+import { entityTypeToFolderType, resolveUniqueFolderName } from '~~/server/utils/folders'
+import { STANDARD_CLASS_KEYS, STANDARD_RACE_KEYS } from '~~/server/utils/i18n-lookup'
+import { getUploadPath } from '~~/server/utils/paths'
 import {
   FOLDER_ENTITY_TYPES,
-  isValidFolderName,
   isValidEasterEgg,
+  isValidFolderName,
   type EntityFolderType,
 } from '~~/types/folder'
-import { resolveUniqueFolderName, entityTypeToFolderType } from '~~/server/utils/folders'
+import {
+  DEFAULT_TAG_COLOR,
+  isValidTagColor,
+  isValidTagName,
+  normaliseTagName,
+} from '~~/types/tag'
 // Reuse the folder rename convention ("Name (1)") for climate-zone collisions.
-import { uniqueFolderName as uniqueName } from '~~/types/folder'
 import type {
-  RaceClassConflict,
   CampaignExportManifest,
+  ExportEntity,
+  IdMapping,
+  ImportConflictInfo,
   ImportOptions,
   ImportResult,
-  IdMapping,
-  ExportEntity,
-  ImportConflictInfo,
   ImportTracking,
+  RaceClassConflict,
 } from '~~/types/export'
 import { isExportCompatible, isExportFromNewerVersion } from '~~/types/export'
+import { uniqueFolderName as uniqueName } from '~~/types/folder'
 
 // Get app version from package.json
 import pkg from '~~/package.json'
-import { sanitizeMusicLinks } from '~~/server/utils/music-links'
 import { syncStoryNodeMentions } from '~~/server/utils/extract-mentions'
+import { sanitizeMusicLinks } from '~~/server/utils/music-links'
 import { repairStoryTree } from '~~/server/utils/story'
 import { STORY_NODE_TEXT_FIELDS } from '~~/types/story'
 
@@ -1773,7 +1773,15 @@ export default defineEventHandler(async (event) => {
       const updateMetadata = db.prepare('UPDATE entities SET metadata = ? WHERE id = ?')
       for (const node of storyNodes) {
         if (!importedIds.has(node.id) || !node.metadata) continue
-        const metadata = JSON.parse(node.metadata) as Record<string, unknown>
+        let metadata: Record<string, unknown>
+        try {
+          const parsed = JSON.parse(node.metadata)
+          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) continue
+          metadata = parsed
+        }
+        catch {
+          continue
+        }
         for (const field of STORY_NODE_TEXT_FIELDS) {
           if (typeof metadata[field] === 'string') metadata[field] = transformEntityLinks(metadata[field] as string) ?? ''
         }
