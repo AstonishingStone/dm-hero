@@ -1,6 +1,6 @@
 import { getDb } from '../../utils/db'
 import { createLevenshtein } from '../../utils/levenshtein'
-import { parseSearchQuery } from '../../utils/search-query-parser'
+import { parseSearchQuery, quoteFts5Term } from '../../utils/search-query-parser'
 import { extractTagFilters, resolveTagFilter } from '../../utils/searchQuery'
 import {
   getRaceKey,
@@ -163,24 +163,6 @@ export default defineEventHandler(async (event) => {
       }),
     )
 
-    // Helper function to quote FTS5 terms that contain special characters
-    function quoteFts5Term(term: string): string {
-      // FTS5 special chars that need quoting: - (column separator), () [] {}
-      // Quote terms that contain hyphens or other special characters
-      if (
-        term.includes('-')
-        || term.includes('(')
-        || term.includes(')')
-        || term.includes('[')
-        || term.includes(']')
-      ) {
-        // Escape any double quotes in the term first
-        const escaped = term.replace(/"/g, '""')
-        return `"${escaped}"`
-      }
-      return term
-    }
-
     // Rebuild FTS query with expanded terms
     let ftsQuery: string
     if (parsedQuery.hasOperators) {
@@ -258,7 +240,7 @@ export default defineEventHandler(async (event) => {
 
       // FALLBACK 1: Try prefix wildcard if exact match found nothing (only for simple queries)
       if (npcs.length === 0 && useExactMatch && !parsedQuery.hasOperators) {
-        ftsQuery = `${searchTerm}*`
+        ftsQuery = parsedQuery.terms.map(t => `${quoteFts5Term(t)}*`).join(' ')
         useExactMatch = false
 
         npcs = db
