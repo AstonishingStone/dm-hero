@@ -2,7 +2,7 @@ name: Docker (Pi)
 
 on:
   push:
-    branches: [feature/campaign_manager]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
