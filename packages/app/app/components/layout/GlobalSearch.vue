@@ -110,6 +110,7 @@ function getLocalizedType(type: string): string {
     Lore: t('entityTypes.Lore'),
     Session: t('entityTypes.Session'),
     Player: t('entityTypes.Player'),
+    StoryNode: t('entityTypes.StoryNode'),
     Group: t('entityTypes.Group'),
   }
   return typeMap[type] || type

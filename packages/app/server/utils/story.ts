@@ -194,7 +194,7 @@ function nextSortOrder(db: Database.Database, campaignId: number, parentId: numb
  * Create and return a node as the last child of parentId (omitted/null means top level).
  * Trims the name; an omitted or unrecognized kind becomes scene, and status is idea.
  * Throws StoryError(400) for a missing campaign ID, invalid name, or parent in another
- * campaign; 404 for a missing/deleted parent; 500 for a missing StoryNode type.
+ * campaign; 404 for a missing campaign or a missing/deleted parent; 500 for a missing StoryNode type.
  * Database errors propagate.
  */
 export function createStoryNode(
@@ -207,6 +207,7 @@ export function createStoryNode(
   const kind = STORY_NODE_KINDS.includes(input.kind as StoryNodeKind) ? input.kind! : 'scene'
 
   const id = db.transaction(() => {
+    if (!db.prepare('SELECT 1 FROM campaigns WHERE id = ?').get(input.campaignId)) throw new StoryError(404, 'Campaign not found')
     assertParent(db, input.campaignId, parentId)
     const metadata: StoryNodeMetadata = { kind, status: 'idea' }
     const result = db.prepare(`
@@ -293,7 +294,8 @@ function subtreeIds(db: Database.Database, id: number): number[] {
 }
 
 /**
- * Soft-delete a node and its live story descendants in the same campaign; return their ids.
+ * Soft-delete a node and its live story descendants in the same campaign, remove their
+ * links and mentions, and return their ids.
  * Throws StoryError(404) for a missing/deleted node or StoryError(500) for a missing
  * StoryNode type; database errors propagate.
  */
@@ -302,6 +304,11 @@ export function deleteStoryNode(db: Database.Database, id: number): number[] {
     getNodeRow(db, id)
     const ids = subtreeIds(db, id)
     const placeholders = ids.map(() => '?').join(',')
+    // Soft delete does not cascade: drop what points at the deleted nodes
+    for (const table of ['story_node_sessions', 'story_node_encounters', 'story_node_maps', 'story_node_mentions']) {
+      db.prepare(`DELETE FROM ${table} WHERE node_id IN (${placeholders})`).run(...ids)
+    }
+    db.prepare(`DELETE FROM story_node_mentions WHERE entity_id IN (${placeholders})`).run(...ids)
     db.prepare(`UPDATE entities SET deleted_at = CURRENT_TIMESTAMP WHERE id IN (${placeholders}) AND deleted_at IS NULL`).run(...ids)
     return ids
   })()

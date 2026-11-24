@@ -10,10 +10,18 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, message: 'Invalid entity ID' })
   }
 
-  const entity = db.prepare('SELECT id, archived_at FROM entities WHERE id = ? AND deleted_at IS NULL').get(id) as { id: number, archived_at: string | null } | undefined
+  const entity = db.prepare(`
+    SELECT e.id, et.name AS type FROM entities e
+    JOIN entity_types et ON et.id = e.type_id
+    WHERE e.id = ? AND e.deleted_at IS NULL
+  `).get(id) as { id: number, type: string } | undefined
 
   if (!entity) {
     throw createError({ statusCode: 404, message: 'Entity not found' })
+  }
+  // The scenario tree has no archive, an archived entry would stay visible there
+  if (entity.type === 'StoryNode') {
+    throw createError({ statusCode: 400, message: 'Scenario entries cannot be archived' })
   }
 
   // Transaction: find descendants + update atomically

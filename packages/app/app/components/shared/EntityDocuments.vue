@@ -91,7 +91,7 @@
               </v-btn>
               <!-- Hand out to players (only with a running game) -->
               <v-btn
-                v-if="gameTableStore.table"
+                v-if="canHandOut && gameTableStore.table"
                 icon
                 variant="text"
                 size="small"
@@ -300,9 +300,11 @@ interface Document {
 
 interface Props {
   entityId: number
+  /** Off for GM-only owners (scenario entries): their documents never go to players */
+  canHandOut?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), { canHandOut: true })
 
 // Hand a document to the players of the running game
 const gameTableStore = useGameTableStore()

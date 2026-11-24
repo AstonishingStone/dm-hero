@@ -356,7 +356,7 @@
               @images-updated="loadAttachments"
               @preview-image="(url: string) => previewImage = url"
             />
-            <SharedEntityDocuments v-else-if="dialog === 'document'" :entity-id="node.id" @changed="loadAttachments" />
+            <SharedEntityDocuments v-else-if="dialog === 'document'" :entity-id="node.id" :can-hand-out="false" @changed="loadAttachments" />
           </v-card-text>
           <v-card-actions>
             <v-spacer />

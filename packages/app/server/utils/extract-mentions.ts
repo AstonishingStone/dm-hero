@@ -19,7 +19,8 @@ export function extractMentionsFromMarkdown(notes: string | null | undefined): E
   if (!notes) return []
 
   const mentions: EntityMention[] = []
-  const seen = new Set<number>()
+  // Per type: ids of different kinds collide ({{session:5}} is not {{npc:5}})
+  const seen = new Set<string>()
 
   // Parse new format {{type:id}}
   let match
@@ -27,8 +28,8 @@ export function extractMentionsFromMarkdown(notes: string | null | undefined): E
     const type = match[1]!
     const entityId = parseInt(match[2]!, 10)
 
-    if (!seen.has(entityId)) {
-      seen.add(entityId)
+    if (!seen.has(`${type}:${entityId}`)) {
+      seen.add(`${type}:${entityId}`)
       mentions.push({ entityId, type })
     }
   }
@@ -38,8 +39,8 @@ export function extractMentionsFromMarkdown(notes: string | null | undefined): E
     const type = match[2]!
     const entityId = parseInt(match[3]!, 10)
 
-    if (!seen.has(entityId)) {
-      seen.add(entityId)
+    if (!seen.has(`${type}:${entityId}`)) {
+      seen.add(`${type}:${entityId}`)
       mentions.push({ entityId, type })
     }
   }

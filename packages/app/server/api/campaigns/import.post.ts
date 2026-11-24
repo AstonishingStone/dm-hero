@@ -618,6 +618,8 @@ export default defineEventHandler(async (event) => {
         for (const entity of manifest.entities) {
           const localTypeId = resolveTypeId(entity)
           const typeName = entity.type_name || fallbackTypeIdToName[entity.type_id] || 'Unknown'
+          // Scenario titles repeat ("Scene 1", "Epilogue"): the same title is no duplicate
+          if (typeName === 'StoryNode') continue
 
           const existing = db
             .prepare(

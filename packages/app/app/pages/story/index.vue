@@ -356,18 +356,21 @@ provide<StoryTreeContext>('storyTree', {
   kindForDepth: defaultKindForDepth,
 })
 
-watch(activeCampaignIdNumber, (id, previousId) => {
-  if (previousId !== undefined) {
-    const { node: _node, ...rest } = route.query
-    router.replace({ query: rest })
-  }
-  storyStore.nodes = []
-  if (id) storyStore.fetchNodes(id)
-  else {
-    storyStore.treeRequest++
-    storyStore.loading = false
-  }
-}, { immediate: true })
+// Client only: a fetch started during SSR would hydrate as a loading state that never ends
+if (import.meta.client) {
+  watch(activeCampaignIdNumber, (id, previousId) => {
+    if (previousId !== undefined) {
+      const { node: _node, ...rest } = route.query
+      router.replace({ query: rest })
+    }
+    storyStore.nodes = []
+    if (id) storyStore.fetchNodes(id)
+    else {
+      storyStore.treeRequest++
+      storyStore.loading = false
+    }
+  }, { immediate: true })
+}
 </script>
 
 <style scoped>

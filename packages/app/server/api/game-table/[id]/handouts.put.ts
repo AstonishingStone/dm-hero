@@ -18,13 +18,16 @@ export default defineEventHandler(async (event) => {
 
   const db = getDb()
   // Only documents of this game's campaign
-  const sameCampaign = db.prepare(`
-    SELECT 1 FROM entity_documents d
+  const owner = db.prepare(`
+    SELECT et.name AS type FROM entity_documents d
     JOIN entities e ON e.id = d.entity_id AND e.deleted_at IS NULL
+    JOIN entity_types et ON et.id = e.type_id
     JOIN game_tables g ON g.campaign_id = e.campaign_id
     WHERE d.id = ? AND g.id = ?
-  `).get(documentId, tableId)
-  if (!sameCampaign) throw createError({ statusCode: 400, message: 'Document belongs to another campaign' })
+  `).get(documentId, tableId) as { type: string } | undefined
+  if (!owner) throw createError({ statusCode: 400, message: 'Document belongs to another campaign' })
+  // Scenario prep is GM-only, nothing of it reaches the players
+  if (owner.type === 'StoryNode') throw createError({ statusCode: 400, message: 'Scenario documents cannot be handed out' })
 
   if (Array.isArray(recipients)) {
     const known = db.prepare(`SELECT COUNT(*) AS n FROM game_table_players WHERE game_table_id = ? AND id IN (${recipients.map(() => '?').join(',')})`)

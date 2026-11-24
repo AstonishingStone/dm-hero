@@ -56,6 +56,10 @@ describe('story nodes', () => {
     expect(listStoryNodes(db, campaignId).find(n => n.name === 'Scene A')!.kind).toBe('scene')
   })
 
+  it('rejects a campaign that does not exist', () => {
+    expect(() => createStoryNode(db, { campaignId: 999999, name: 'Lost' })).toThrow(StoryError)
+  })
+
   it('rejects a parent from another campaign', () => {
     const foreign = createStoryNode(db, { campaignId: otherCampaignId, name: 'Elsewhere' })
     expect(() => createStoryNode(db, { campaignId, name: 'X', parentId: foreign.id })).toThrow(StoryError)
@@ -103,6 +107,21 @@ describe('story nodes', () => {
     expect(deleteStoryNode(db, arc.id)).toHaveLength(3)
     expect(listStoryNodes(db, campaignId).map(n => n.name)).toEqual(['Keep'])
     expect(() => getStoryNode(db, chapter.id)).toThrow(StoryError)
+  })
+
+  it('removes the links and mentions of deleted nodes', () => {
+    const scene = createStoryNode(db, { campaignId, name: 'Scene' })
+    const other = createStoryNode(db, { campaignId, name: 'Other' })
+    setStoryNodeLinks(db, scene.id, { sessionIds: [session('One')] })
+    updateStoryNode(db, scene.id, { description: `{{npc:${npc('Guard')}}}` })
+    updateStoryNode(db, other.id, { description: `{{story:${scene.id}}}` })
+
+    deleteStoryNode(db, scene.id)
+
+    const rows = (sql: string) => (db.prepare(sql).get(scene.id) as { n: number }).n
+    expect(rows('SELECT COUNT(*) AS n FROM story_node_sessions WHERE node_id = ?')).toBe(0)
+    expect(rows('SELECT COUNT(*) AS n FROM story_node_mentions WHERE node_id = ?')).toBe(0)
+    expect(rows('SELECT COUNT(*) AS n FROM story_node_mentions WHERE entity_id = ?')).toBe(0)
   })
 })
 
@@ -205,6 +224,13 @@ describe('session mention type check', () => {
 
     syncSessionMentions(db, s, `{{location:${someNpc}}}`)
     expect(db.prepare('SELECT COUNT(*) AS c FROM session_mentions WHERE session_id = ?').get(s)).toEqual({ c: 0 })
+  })
+
+  it('keeps an NPC mention when a session link with the same id comes first', () => {
+    const someNpc = npc('Coincidence')
+    const s = session('S')
+    syncSessionMentions(db, s, `{{session:${someNpc}}} and {{npc:${someNpc}}}`)
+    expect(db.prepare('SELECT entity_id FROM session_mentions WHERE session_id = ?').all(s)).toEqual([{ entity_id: someNpc }])
   })
 })
 

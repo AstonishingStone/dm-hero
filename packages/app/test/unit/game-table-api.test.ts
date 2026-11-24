@@ -199,6 +199,17 @@ describe('game table API', () => {
     expect(await call('[id]/handouts.get.ts', { params: { id: String(table.id) } })).toMatchObject([{ recipients: 'all' }])
   })
 
+  it('never hands out a document of a scenario entry', async () => {
+    const table = await startGame()
+    const typeId = (db.prepare('SELECT id FROM entity_types WHERE name = ?').get('StoryNode') as { id: number }).id
+    const entity = Number(db.prepare('INSERT INTO entities (type_id, name, campaign_id) VALUES (?, ?, ?)').run(typeId, 'Finale', campaignId).lastInsertRowid)
+    const doc = Number(db.prepare('INSERT INTO entity_documents (entity_id, title, content, date) VALUES (?, ?, ?, ?)').run(entity, 'Twist', 'Secret', '2026-10-04').lastInsertRowid)
+
+    await expect(call('[id]/handouts.put.ts', { params: { id: String(table.id) }, body: { documentId: doc, recipients: 'all' } }))
+      .rejects.toMatchObject({ statusCode: 400 })
+    expect(await call('[id]/handouts.get.ts', { params: { id: String(table.id) } })).toEqual([])
+  })
+
   it('a refused change keeps the previous recipients', async () => {
     const table = await startGame()
     const anna = await call<GameTablePlayer>('[id]/players.post.ts', { params: { id: String(table.id) }, body: { name: 'Anna' } })
